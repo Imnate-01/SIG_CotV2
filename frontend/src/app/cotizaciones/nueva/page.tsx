@@ -493,13 +493,15 @@ const ModalVistaPrevia: React.FC<ModalVistaPreviaProps> = ({ isOpen, onClose, fo
         (await mergedPdf.copyPages(quotePdf, quotePdf.getPageIndices())).forEach(page => mergedPdf.addPage(page));
         (await mergedPdf.copyPages(reportPdf, reportPdf.getPageIndices())).forEach(page => mergedPdf.addPage(page));
 
-        const mergedPdfBytes = await mergedPdf.save();
-        const blob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `Cotizacion_${folio || 'Borrador'}_FULL.pdf`;
-        link.click();
+      const mergedPdfBytes = await mergedPdf.save();
+      const blob = new Blob([mergedPdfBytes as any], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Cotizacion_${folio || 'Borrador'}_FULL.pdf`;
+      link.click();
+      // revoke the object URL to free memory after the download is triggered
+      URL.revokeObjectURL(url);
 
     } catch (error) {
         console.error(error);
@@ -636,9 +638,12 @@ const NuevaCotizacionPage: React.FC = () => {
     fetchServicios();
   }, []);
 
-  const handleInputChange = (seccion: keyof CotizacionFormData, campo: string, valor: any) => {
-    setFormData((prev) => ({ ...prev, [seccion]: { ...prev[seccion], [campo]: valor } }));
-  };
+  const handleInputChange = <K extends keyof CotizacionFormData>(seccion: K, campo: string, valor: any) => {
+      setFormData((prev) => ({ 
+        ...prev, 
+        [seccion]: { ...(prev[seccion] as Record<string, any> || {}), [campo]: valor } 
+      }));
+    };
 
  const [loading, setLoading] = useState(false)
 
@@ -774,7 +779,20 @@ const handleGuardar = async () => {
         if (campo === "tarifaId") updated.tarifaId = String(valor);
         else if (campo === "conContrato") updated.conContrato = Boolean(valor);
         else if (campo === "detalles") updated.detalles = String(valor);
-        else updated[campo as any] = Number(valor) || 0;
+        else {
+          // Narrow to known numeric fields to keep strong typing
+          if (campo === "ingenieros") {
+            updated.ingenieros = Number(valor) || 0;
+          } else if (campo === "cantidad") {
+            updated.cantidad = Number(valor) || 0;
+          } else if (campo === "id") {
+            // rarely updated — keep a safe fallback
+            updated.id = Number(valor) || updated.id;
+          } else {
+            // Last fallback if an unexpected key arrives; keep it explicit
+            (updated as any)[campo] = valor;
+          }
+        }
         
         const tarifa = tarifasDisponibles.find((t) => String(t.id) === updated.tarifaId);
         const requiereDesglose = tarifa?.requiere_desglose;
