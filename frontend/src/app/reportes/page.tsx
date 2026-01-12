@@ -84,7 +84,7 @@ export default function ReportesPage() {
                   <YAxis axisLine={false} tickLine={false} tickFormatter={formatMoney} tick={{fill: '#6B7280'}} />
                   <Tooltip 
                     contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'}}
-                    formatter={(value: number) => [`$${value.toLocaleString()}`, '']}
+                    formatter={(value: number | undefined) => value !== undefined ? [`$${value.toLocaleString()}`, ''] : ['', '']}
                   />
                   <Legend />
                   <Bar dataKey="cotizado" name="Cotizado" fill="#93C5FD" radius={[4, 4, 0, 0]} />
