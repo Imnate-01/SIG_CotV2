@@ -13,8 +13,8 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   const esFullPage = rutasFullPage.includes(pathname);
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans text-gray-900">
-      
+    <div className="min-h-screen bg-gray-50 dark:bg-zinc-950 font-sans text-gray-900 dark:text-gray-100">
+
       {/* 2. AQUI VA EL ONBOARDING */}
       {/* Solo se renderiza si estamos dentro del sistema. */}
       {/* El componente internamente decide si mostrarse o no (revisando localStorage) */}
@@ -24,12 +24,11 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
       {!esFullPage && <Sidebar />}
 
       {/* Contenido Principal */}
-      <main 
-        className={`min-h-screen transition-all duration-300 ease-in-out ${
-          !esFullPage ? "lg:pl-64" : ""
-        }`}
+      <main
+        className={`min-h-screen transition-all duration-300 ease-in-out ${!esFullPage ? "lg:pl-64" : ""
+          }`}
       >
-        <div className={!esFullPage ? "" : ""}> 
+        <div className={!esFullPage ? "" : ""}>
           {children}
         </div>
       </main>

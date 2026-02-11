@@ -68,41 +68,41 @@ export default function ReportesPage() {
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-7xl mx-auto">
 
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">Métricas de Ventas</h1>
-        <p className="text-gray-500 mb-8">Resumen ejecutivo del rendimiento comercial</p>
+        <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">Métricas de Ventas</h1>
+        <p className="text-gray-500 dark:text-gray-400 mb-8">Resumen ejecutivo del rendimiento comercial</p>
 
         {/* 0. INSIGHTS IA */}
         {prediction && (
-          <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-100 p-6 rounded-2xl mb-8 relative overflow-hidden">
+          <div className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 border border-purple-100 dark:border-purple-800 p-6 rounded-2xl mb-8 relative overflow-hidden">
             <div className="absolute top-0 right-0 p-4 opacity-10">
               <Brain size={120} className="text-purple-600" />
             </div>
             <div className="relative z-10">
               <div className="flex items-center gap-2 mb-3">
-                <Sparkles className="text-purple-600" size={20} />
-                <h3 className="text-lg font-bold text-gray-900">Análisis Predictivo IA</h3>
+                <Sparkles className="text-purple-600 dark:text-purple-400" size={20} />
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Análisis Predictivo IA</h3>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
-                  <p className="text-gray-700 leading-relaxed mb-4">
+                  <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
                     {prediction.analisis}
                   </p>
                   {prediction.alerta && (
-                    <div className="flex items-start gap-3 bg-white/60 p-3 rounded-lg border border-purple-100">
+                    <div className="flex items-start gap-3 bg-white/60 dark:bg-black/40 p-3 rounded-lg border border-purple-100 dark:border-purple-800">
                       <AlertCircle className="text-amber-500 shrink-0 mt-0.5" size={18} />
-                      <p className="text-sm text-gray-800 font-medium">{prediction.alerta}</p>
+                      <p className="text-sm text-gray-800 dark:text-gray-200 font-medium">{prediction.alerta}</p>
                     </div>
                   )}
                 </div>
 
-                <div className="bg-white/50 rounded-xl p-4">
-                  <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Pronóstico Próximos 3 Meses</h4>
+                <div className="bg-white/50 dark:bg-black/20 rounded-xl p-4">
+                  <h4 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Pronóstico Próximos 3 Meses</h4>
                   <div className="space-y-3">
                     {prediction.prediction.map((p: any, idx: number) => (
-                      <div key={idx} className="flex justify-between items-end border-b border-gray-100 pb-2 last:border-0">
-                        <span className="text-sm text-gray-600">{p.mes}</span>
-                        <span className="font-bold text-purple-700">${p.venta_estimada.toLocaleString()}</span>
+                      <div key={idx} className="flex justify-between items-end border-b border-gray-100 dark:border-purple-800/30 pb-2 last:border-0">
+                        <span className="text-sm text-gray-600 dark:text-gray-400">{p.mes}</span>
+                        <span className="font-bold text-purple-700 dark:text-purple-400">${p.venta_estimada.toLocaleString()}</span>
                       </div>
                     ))}
                   </div>
@@ -148,16 +148,17 @@ export default function ReportesPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
 
           {/* Gráfica de Barras: Historia Mensual */}
-          <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-            <h3 className="text-lg font-bold text-gray-800 mb-6">Rendimiento Mensual (USD)</h3>
+          <div className="lg:col-span-2 bg-white dark:bg-zinc-900 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-zinc-800">
+            <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-6">Rendimiento Mensual (USD)</h3>
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={data.chartData}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#6B7280' }} />
-                  <YAxis axisLine={false} tickLine={false} tickFormatter={formatMoney} tick={{ fill: '#6B7280' }} />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#374151" className="opacity-30" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#9CA3AF' }} />
+                  <YAxis axisLine={false} tickLine={false} tickFormatter={formatMoney} tick={{ fill: '#9CA3AF' }} />
                   <Tooltip
-                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}
+                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)', backgroundColor: '#18181b', color: '#fff' }}
+                    itemStyle={{ color: '#fff' }}
                     formatter={(value: number | undefined) => value !== undefined ? [`$${value.toLocaleString()}`, ''] : ['', '']}
                   />
                   <Legend />
@@ -170,8 +171,8 @@ export default function ReportesPage() {
           </div>
 
           {/* Gráfica de Pastel: Estatus */}
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-            <h3 className="text-lg font-bold text-gray-800 mb-6">Estatus de Cotizaciones</h3>
+          <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-zinc-800">
+            <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-6">Estatus de Cotizaciones</h3>
             <div className="h-64 relative">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -195,7 +196,7 @@ export default function ReportesPage() {
               {/* Texto central */}
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <div className="text-center">
-                  <span className="text-3xl font-bold text-gray-800">{data.kpis.totalCotizaciones}</span>
+                  <span className="text-3xl font-bold text-gray-800 dark:text-white">{data.kpis.totalCotizaciones}</span>
                   <p className="text-xs text-gray-400 uppercase">Total</p>
                 </div>
               </div>
@@ -204,8 +205,8 @@ export default function ReportesPage() {
         </div>
 
         {/* 3. TOP CLIENTES */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-          <h3 className="text-lg font-bold text-gray-800 mb-6">Top 5 Clientes (Por Volumen Ganado)</h3>
+        <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-zinc-800">
+          <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-6">Top 5 Clientes (Por Volumen Ganado)</h3>
           <div className="space-y-4">
             {data.topClientes.length === 0 ? (
               <p className="text-gray-400 text-sm">Aún no hay ventas registradas.</p>
@@ -215,10 +216,10 @@ export default function ReportesPage() {
                   <div className="w-8 text-gray-400 font-bold text-sm">#{index + 1}</div>
                   <div className="flex-1">
                     <div className="flex justify-between mb-1">
-                      <span className="font-medium text-gray-700">{cliente.name}</span>
-                      <span className="font-bold text-gray-900">${cliente.value.toLocaleString()}</span>
+                      <span className="font-medium text-gray-700 dark:text-gray-300">{cliente.name}</span>
+                      <span className="font-bold text-gray-900 dark:text-white">${cliente.value.toLocaleString()}</span>
                     </div>
-                    <div className="w-full bg-gray-100 rounded-full h-2">
+                    <div className="w-full bg-gray-100 dark:bg-zinc-800 rounded-full h-2">
                       <div
                         className="bg-blue-600 h-2 rounded-full"
                         style={{ width: `${(cliente.value / data.kpis.totalVendido) * 100}%` }}
@@ -239,12 +240,12 @@ export default function ReportesPage() {
 // Componente auxiliar para tarjetas
 function CardKPI({ title, value, icon, color }: any) {
   return (
-    <div className={`p-6 rounded-2xl border ${color} flex items-start justify-between transition-transform hover:-translate-y-1`}>
+    <div className={`p-6 rounded-2xl border ${color.replace('bg-', 'bg-opacity-10 dark:bg-opacity-5 ').replace('border-', 'dark:border-opacity-20 ')} dark:border-opacity-50 flex items-start justify-between transition-transform hover:-translate-y-1`}>
       <div>
-        <p className="text-gray-500 text-sm font-medium mb-1">{title}</p>
-        <h3 className="text-2xl font-bold text-gray-800">{value}</h3>
+        <p className="text-gray-500 dark:text-gray-400 text-sm font-medium mb-1">{title}</p>
+        <h3 className="text-2xl font-bold text-gray-800 dark:text-white">{value}</h3>
       </div>
-      <div className="p-3 bg-white rounded-xl shadow-sm">
+      <div className="p-3 bg-white dark:bg-zinc-800 rounded-xl shadow-sm">
         {icon}
       </div>
     </div>

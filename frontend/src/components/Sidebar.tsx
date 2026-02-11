@@ -2,25 +2,26 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { 
-  LayoutDashboard, 
-  FilePlus, 
-  LogOut, 
+import {
+  LayoutDashboard,
+  FilePlus,
+  LogOut,
   UserCircle,
-  Users,         
-  Tags,          
-  BarChart3,     
-  Settings,      
+  Users,
+  Tags,
+  BarChart3,
+  Settings,
   HelpCircle,
   Menu, // Icono de Hamburguesa
   X,     // Icono de Cerrar
   Wrench // Nuevo icono para servicio técnico
 } from "lucide-react";
+import { ThemeToggle } from "./ThemeToggle";
 
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  
+
   // Estado para controlar si el menú móvil está abierto
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
@@ -52,25 +53,24 @@ export default function Sidebar() {
   };
 
   // Helper para clases de link activo
-  const linkClass = (path: string) => 
-    `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all font-medium text-sm ${
-      pathname === path || pathname.startsWith(path + "/")
-        ? "bg-blue-50 text-blue-600" 
-        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+  const linkClass = (path: string) =>
+    `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all font-medium text-sm ${pathname === path || pathname.startsWith(path + "/")
+      ? "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400"
+      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-zinc-800 dark:hover:text-gray-200"
     }`;
 
   // --- LÓGICA DE ROLES ---
   // Determinamos si es ingeniero basándonos en su rol o departamento
-  const esIngeniero = usuario.rol === 'ingeniero' || 
-                      (usuario.departamento && (
-                        usuario.departamento.toLowerCase().includes('técnico') || 
-                        usuario.departamento.toLowerCase().includes('servicio')
-                      ));
+  const esIngeniero = usuario.rol === 'ingeniero' ||
+    (usuario.departamento && (
+      usuario.departamento.toLowerCase().includes('técnico') ||
+      usuario.departamento.toLowerCase().includes('servicio')
+    ));
 
   return (
     <>
       {/* 1. BOTÓN DE MENÚ MÓVIL (Solo visible en pantallas pequeñas) */}
-      <button 
+      <button
         onClick={() => setIsMobileOpen(true)}
         className="lg:hidden fixed top-4 left-4 z-40 p-2 bg-white border border-gray-200 rounded-lg shadow-sm text-gray-600 hover:bg-gray-50"
       >
@@ -79,34 +79,35 @@ export default function Sidebar() {
 
       {/* 2. OVERLAY OSCURO (Fondo negro semitransparente en móvil) */}
       {isMobileOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm transition-opacity"
           onClick={() => setIsMobileOpen(false)}
         />
       )}
 
       {/* 3. EL SIDEBAR */}
-      <aside 
+      <aside
         className={`
-          fixed top-0 left-0 h-screen w-64 bg-white border-r border-gray-200 flex flex-col shadow-xl z-50 transition-transform duration-300 ease-in-out
-          ${isMobileOpen ? "translate-x-0" : "-translate-x-full"} 
+          fixed top-0 left-0 h-screen w-64 bg-white dark:bg-zinc-900 border-r border-gray-200 dark:border-zinc-800 flex flex-col shadow-xl z-50 transition-transform duration-300 ease-in-out
+          ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
           lg:translate-x-0 lg:shadow-none
         `}
       >
-        
+
         {/* HEADER */}
-        <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+        <div className="p-6 border-b border-gray-100 dark:border-zinc-800 flex items-center justify-between">
           <div className="flex items-center gap-3">
             {/* Color distintivo según rol: Azul (Ventas) / Naranja (Técnico) */}
             <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold shadow-md ${esIngeniero ? 'bg-orange-500 shadow-orange-200' : 'bg-blue-600 shadow-blue-200'}`}>
               S
             </div>
-            <span className="font-bold text-lg text-gray-800 tracking-tight">SIG System</span>
+            <span className="font-bold text-lg text-gray-800 dark:text-gray-200 tracking-tight">SIG System</span>
           </div>
+          <ThemeToggle />
           {/* Botón X para cerrar en móvil */}
-          <button 
+          <button
             onClick={() => setIsMobileOpen(false)}
-            className="lg:hidden text-gray-400 hover:text-gray-600"
+            className="lg:hidden text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
           >
             <X size={20} />
           </button>
@@ -114,12 +115,12 @@ export default function Sidebar() {
 
         {/* NAV SCROLLABLE */}
         <nav className="flex-1 p-4 space-y-6 overflow-y-auto custom-scrollbar">
-          
+
           {/* --- MENÚ EXCLUSIVO PARA VENTAS / ADMIN --- */}
           {!esIngeniero && (
             <>
               <div>
-                <p className="px-3 text-[11px] font-extrabold text-gray-400 uppercase tracking-wider mb-2">Comercial</p>
+                <p className="px-3 text-[11px] font-extrabold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-2">Comercial</p>
                 <div className="space-y-1">
                   <Link href="/cotizaciones" className={linkClass("/cotizaciones")}>
                     <LayoutDashboard size={18} />
@@ -133,7 +134,7 @@ export default function Sidebar() {
               </div>
 
               <div>
-                <p className="px-3 text-[11px] font-extrabold text-gray-400 uppercase tracking-wider mb-2">Gestión</p>
+                <p className="px-3 text-[11px] font-extrabold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-2">Gestión</p>
                 <div className="space-y-1">
                   <Link href="/clientes" className={linkClass("/clientes")}>
                     <Users size={18} />
@@ -150,13 +151,13 @@ export default function Sidebar() {
 
           {/* --- SECCIÓN DE REPORTES TÉCNICOS (Visible para todos, pero prioritaria para Ingenieros) --- */}
           <div>
-            <p className="px-3 text-[11px] font-extrabold text-gray-400 uppercase tracking-wider mb-2">Servicio Técnico</p>
+            <p className="px-3 text-[11px] font-extrabold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-2">Servicio Técnico</p>
             <div className="space-y-1">
               <Link href="/reportestec" className={linkClass("/reportestec")}>
                 <Wrench size={18} />
                 {esIngeniero ? "Mis Reportes" : "Reportes Técnicos"}
               </Link>
-              
+
               {/* Acceso directo a crear reporte (Esencial para ingenieros) */}
               {esIngeniero && (
                 <Link href="/reportestec/nuevo" className={linkClass("/reportestec/nuevo")}>
@@ -177,7 +178,7 @@ export default function Sidebar() {
 
           {/* --- SECCIÓN SISTEMA (Común) --- */}
           <div>
-            <p className="px-3 text-[11px] font-extrabold text-gray-400 uppercase tracking-wider mb-2">Sistema</p>
+            <p className="px-3 text-[11px] font-extrabold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-2">Sistema</p>
             <div className="space-y-1">
               {/* Configuración solo para Admins/Ventas */}
               {!esIngeniero && (
@@ -196,23 +197,23 @@ export default function Sidebar() {
         </nav>
 
         {/* FOOTER */}
-        <div className="p-4 border-t border-gray-100 bg-gray-50/50">
+        <div className="p-4 border-t border-gray-100 dark:border-zinc-800 bg-gray-50/50 dark:bg-zinc-900/50">
           <div className="flex items-center gap-3 mb-3 px-1">
-            <div className="bg-white p-1.5 rounded-full border border-gray-200">
-               <UserCircle className="text-gray-400" size={28} />
+            <div className="bg-white dark:bg-zinc-800 p-1.5 rounded-full border border-gray-200 dark:border-zinc-700">
+              <UserCircle className="text-gray-400" size={28} />
             </div>
             <div className="overflow-hidden">
-              <p className="text-sm font-bold text-gray-700 truncate capitalize">
+              <p className="text-sm font-bold text-gray-700 dark:text-gray-200 truncate capitalize">
                 {usuario.nombre}
               </p>
-              <p className="text-[10px] text-gray-500 truncate font-mono">
+              <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate font-mono">
                 {/* Mostramos el rol de forma amigable */}
                 {esIngeniero ? "Ingeniero de Campo" : (usuario.rol || "Usuario")}
               </p>
             </div>
           </div>
-          
-          <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 text-gray-600 hover:text-red-600 hover:bg-red-50 py-2 rounded-lg transition-all text-xs font-bold uppercase border border-gray-200 hover:border-red-100 bg-white">
+
+          <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 text-gray-600 dark:text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 py-2 rounded-lg transition-all text-xs font-bold uppercase border border-gray-200 dark:border-zinc-700 hover:border-red-100 dark:hover:border-red-900 bg-white dark:bg-zinc-800">
             <LogOut size={14} />
             Cerrar Sesión
           </button>
