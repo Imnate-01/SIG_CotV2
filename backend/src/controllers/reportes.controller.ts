@@ -8,7 +8,7 @@ export class ReportesController {
       // 1. Seguridad: Validar token
       const token = req.headers.authorization?.split(' ')[1];
       if (!token) return res.status(401).json({ success: false, error: "No autorizado" });
-      
+
       const supabaseUser = createClientForUser(token);
 
       // 2. Consulta Segura (Respetando RLS)
@@ -23,7 +23,7 @@ export class ReportesController {
       if (error) throw error
 
       // 3. PROCESAMIENTO DE DATOS (Matemáticas simples)
-      
+
       // A. KPIs Generales
       let totalCotizado = 0;
       let totalVendido = 0; // Solo estado 'aceptada'
@@ -46,7 +46,7 @@ export class ReportesController {
         totalCotizado += monto;
         if (estado === 'aceptada') {
           totalVendido += monto;
-          
+
           // Sumar al cliente (Solo lo vendido cuenta para el Top)
           // Nota: Usamos optional chaining ?. por seguridad si clientes viene null
           const cliente = cot.clientes?.nombre || 'Desconocido';
@@ -100,6 +100,75 @@ export class ReportesController {
 
     } catch (error: any) {
       res.status(500).json({ success: false, error: error.message })
+    }
+  }
+  async getPredictiveStats(req: Request, res: Response) {
+    try {
+      const token = req.headers.authorization?.split(' ')[1];
+      if (!token) return res.status(401).json({ success: false, error: "No autorizado" });
+
+      const supabaseUser = createClientForUser(token);
+
+      // Obtener datos históricos (últimos 12 meses)
+      const { data: cotizaciones, error } = await supabaseUser
+        .from('cotizaciones')
+        .select(`total, fecha_creacion, estado`)
+        .order('fecha_creacion', { ascending: true });
+
+      if (error) throw error;
+
+      // Agrupar por mes
+      const history: any = {};
+      cotizaciones?.forEach((cot: any) => {
+        const fecha = new Date(cot.fecha_creacion);
+        const mesKey = `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}`;
+        const monto = Number(cot.total) || 0;
+
+        if (!history[mesKey]) history[mesKey] = 0;
+        if (cot.estado === 'aceptada') history[mesKey] += monto;
+      });
+
+      // Preparar prompt para Gemini
+      const historyText = Object.entries(history)
+        .map(([mes, total]) => `Mes ${mes}: $${total}`)
+        .join('\n');
+
+      const prompt = `
+        Analiza el siguiente historial de ventas mensuales y genera una predicción para los próximos 3 meses.
+        
+        Historial:
+        ${historyText}
+        
+        Instrucciones:
+        1. Devuelve un JSON con la predicción de ventas para los siguientes 3 meses.
+        2. Incluye un breve análisis de tendencia (máx 20 palabras).
+        3. Si detectas una anomalía o tendencia importante, agrégala como alerta.
+        
+        Formato JSON esperado:
+        {
+          "prediction": [
+            { "mes": "YYYY-MM", "venta_estimada": 0 },
+            { "mes": "YYYY-MM", "venta_estimada": 0 },
+            { "mes": "YYYY-MM", "venta_estimada": 0 }
+          ],
+          "analisis": "Texto del análisis aquí",
+          "alerta": "Texto de alerta aquí (opcional)"
+        }
+      `;
+
+      // Llamar a Gemini
+      const { callGemini } = require('../utils/gemini'); // Import dinámico para evitar conflictos circulares si los hubiera, o simple clean code
+      let aiResponse = await callGemini(prompt);
+
+      // Limpiar JSON
+      aiResponse = aiResponse.replace(/```json/g, "").replace(/```/g, "").trim();
+      const predictionData = JSON.parse(aiResponse);
+
+      res.json({ success: true, data: predictionData, history });
+
+    } catch (error: any) {
+      console.error("Error en predicción:", error);
+      res.status(500).json({ success: false, error: error.message });
     }
   }
 }
