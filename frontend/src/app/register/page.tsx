@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export default function RegisterPage() {
   const [nombre, setNombre] = useState("");
@@ -79,7 +80,7 @@ export default function RegisterPage() {
       // Mostrar éxito
       setSuccessMsg(true);
       setTimeout(() => {
-        alert("Cuenta creada correctamente. Ahora puedes iniciar sesión.");
+        toast.success("Cuenta creada correctamente. Ahora puedes iniciar sesión.");
       }, 1000);
     } catch (err) {
       console.error(err);
@@ -92,31 +93,31 @@ export default function RegisterPage() {
   const strength = passwordStrength();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-slate-50 flex items-center justify-center p-4">
-      <div className="bg-white shadow-2xl rounded-2xl max-w-6xl w-full flex overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-slate-50 dark:from-zinc-950 dark:via-zinc-900 dark:to-black flex items-center justify-center p-4">
+      <div className="bg-white dark:bg-zinc-900 shadow-2xl rounded-2xl max-w-6xl w-full flex overflow-hidden border border-transparent dark:border-zinc-800">
         {/* Columna IZQUIERDA: formulario */}
         <div className="w-full md:w-1/2 px-8 sm:px-12 lg:px-16 py-12 overflow-y-auto max-h-screen">
           {/* Logo SIG */}
           <div className="mb-8">
-            <img 
-              src="/SIG_logo.png" 
-              alt="Logo SIG" 
-              className="h-16 w-auto object-contain" 
+            <img
+              src="/SIG_logo.png"
+              alt="Logo SIG"
+              className="h-16 w-auto object-contain dark:brightness-100"
             />
           </div>
 
-          <h1 className="text-4xl font-bold text-slate-900 leading-tight">
+          <h1 className="text-4xl font-bold text-slate-900 dark:text-white leading-tight">
             Crea tu nueva
             <br />
-            <span className="bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-blue-600 to-blue-800 dark:from-blue-400 dark:to-blue-600 bg-clip-text text-transparent">
               cuenta
             </span>
           </h1>
 
-          <p className="mt-4 text-base text-slate-600">
+          <p className="mt-4 text-base text-slate-600 dark:text-gray-400">
             Complete el formulario para crear su cuenta.
             <br />
-            <span className="text-sm text-slate-500">
+            <span className="text-sm text-slate-500 dark:text-gray-500">
               Recuerde usar su correo corporativo @sig.biz
             </span>
           </p>
@@ -125,14 +126,14 @@ export default function RegisterPage() {
             <div>
               <label
                 htmlFor="nombre"
-                className="block text-sm font-semibold text-slate-800 mb-2"
+                className="block text-sm font-semibold text-slate-800 dark:text-gray-200 mb-2"
               >
                 Nombre completo
               </label>
               <input
                 id="nombre"
                 type="text"
-                className="w-full rounded-lg border-2 border-slate-200 px-4 py-3 text-base text-slate-900 placeholder-slate-400 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-slate-300"
+                className="w-full rounded-lg border-2 border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-3 text-base text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-500 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-slate-300 dark:hover:border-zinc-600"
                 placeholder="Juan Pérez García"
                 value={nombre}
                 onChange={(e) => setNombre(e.target.value)}
@@ -142,7 +143,7 @@ export default function RegisterPage() {
             <div>
               <label
                 htmlFor="email"
-                className="block text-sm font-semibold text-slate-800 mb-2"
+                className="block text-sm font-semibold text-slate-800 dark:text-gray-200 mb-2"
               >
                 Correo electrónico corporativo
               </label>
@@ -150,7 +151,7 @@ export default function RegisterPage() {
                 <input
                   id="email"
                   type="email"
-                  className="w-full rounded-lg border-2 border-slate-200 px-4 py-3 text-base text-slate-900 placeholder-slate-400 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-slate-300"
+                  className="w-full rounded-lg border-2 border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-3 text-base text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-500 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-slate-300 dark:hover:border-zinc-600"
                   placeholder="usuario@sig.biz"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -168,14 +169,14 @@ export default function RegisterPage() {
             <div>
               <label
                 htmlFor="departamento"
-                className="block text-sm font-semibold text-slate-800 mb-2"
+                className="block text-sm font-semibold text-slate-800 dark:text-gray-200 mb-2"
               >
                 Área o Departamento
               </label>
               <input
                 id="departamento"
                 type="text"
-                className="w-full rounded-lg border-2 border-slate-200 px-4 py-3 text-base text-slate-900 placeholder-slate-400 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-slate-300"
+                className="w-full rounded-lg border-2 border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-3 text-base text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-500 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-slate-300 dark:hover:border-zinc-600"
                 placeholder="Ej. Servicio al cliente, Ingeniería..."
                 value={departamento}
                 onChange={(e) => setDepartamento(e.target.value)}
@@ -186,7 +187,7 @@ export default function RegisterPage() {
             <div>
               <label
                 htmlFor="password"
-                className="block text-sm font-semibold text-slate-800 mb-2"
+                className="block text-sm font-semibold text-slate-800 dark:text-gray-200 mb-2"
               >
                 Crear contraseña
               </label>
@@ -194,7 +195,7 @@ export default function RegisterPage() {
                 <input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  className="w-full rounded-lg border-2 border-slate-200 px-4 py-3 pr-12 text-base text-slate-900 placeholder-slate-400 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-slate-300"
+                  className="w-full rounded-lg border-2 border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-3 pr-12 text-base text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-500 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-slate-300 dark:hover:border-zinc-600"
                   placeholder="Mínimo 8 caracteres"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -202,7 +203,7 @@ export default function RegisterPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
                 >
                   {showPassword ? (
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -218,15 +219,14 @@ export default function RegisterPage() {
               </div>
               {password && (
                 <div className="mt-2 flex items-center gap-2">
-                  <div className="flex-1 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                  <div className="flex-1 h-1.5 bg-slate-200 dark:bg-zinc-700 rounded-full overflow-hidden">
                     <div
-                      className={`h-full transition-all ${
-                        password.length < 8
-                          ? "w-1/3 bg-red-500"
-                          : password.length < 12
+                      className={`h-full transition-all ${password.length < 8
+                        ? "w-1/3 bg-red-500"
+                        : password.length < 12
                           ? "w-2/3 bg-yellow-500"
                           : "w-full bg-green-500"
-                      }`}
+                        }`}
                     />
                   </div>
                   <span className={`text-xs font-medium ${strength.color}`}>
@@ -240,7 +240,7 @@ export default function RegisterPage() {
             <div>
               <label
                 htmlFor="password2"
-                className="block text-sm font-semibold text-slate-800 mb-2"
+                className="block text-sm font-semibold text-slate-800 dark:text-gray-200 mb-2"
               >
                 Confirmar contraseña
               </label>
@@ -248,7 +248,7 @@ export default function RegisterPage() {
                 <input
                   id="password2"
                   type={showPassword2 ? "text" : "password"}
-                  className="w-full rounded-lg border-2 border-slate-200 px-4 py-3 pr-12 text-base text-slate-900 placeholder-slate-400 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-slate-300"
+                  className="w-full rounded-lg border-2 border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-3 pr-12 text-base text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-500 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-slate-300 dark:hover:border-zinc-600"
                   placeholder="Repite la contraseña"
                   value={password2}
                   onChange={(e) => setPassword2(e.target.value)}
@@ -256,7 +256,7 @@ export default function RegisterPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword2(!showPassword2)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
                 >
                   {showPassword2 ? (
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -281,7 +281,7 @@ export default function RegisterPage() {
 
             {/* Mensaje de error */}
             {errorMsg && (
-              <div className="text-sm text-red-700 bg-red-50 border-l-4 border-red-500 rounded-r-lg px-4 py-3 flex items-start gap-2">
+              <div className="text-sm text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 rounded-r-lg px-4 py-3 flex items-start gap-2">
                 <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                 </svg>
@@ -291,7 +291,7 @@ export default function RegisterPage() {
 
             {/* Mensaje de éxito */}
             {successMsg && (
-              <div className="text-sm text-green-700 bg-green-50 border-l-4 border-green-500 rounded-r-lg px-4 py-3 flex items-start gap-2">
+              <div className="text-sm text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-900/30 border-l-4 border-green-500 rounded-r-lg px-4 py-3 flex items-start gap-2">
                 <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                 </svg>
@@ -304,7 +304,7 @@ export default function RegisterPage() {
               type="button"
               onClick={handleSubmit}
               disabled={loading}
-              className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold text-base py-3.5 rounded-lg flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-lg"
+              className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 dark:from-blue-700 dark:to-blue-800 dark:hover:from-blue-600 dark:hover:to-blue-700 text-white font-semibold text-base py-3.5 rounded-lg flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-lg"
             >
               {loading ? (
                 <>
@@ -326,13 +326,13 @@ export default function RegisterPage() {
           </div>
 
           {/* Ya tienes cuenta */}
-          <div className="mt-6 pt-6 border-t border-slate-200 text-center">
-            <p className="text-sm text-slate-600 mb-3">
+          <div className="mt-6 pt-6 border-t border-slate-200 dark:border-zinc-800 text-center">
+            <p className="text-sm text-slate-600 dark:text-gray-400 mb-3">
               ¿Ya tienes una cuenta?
             </p>
             <button
               type="button"
-              className="w-full bg-slate-100 hover:bg-slate-200 text-blue-700 font-semibold text-sm px-6 py-2.5 rounded-lg transition-all hover:shadow-md"
+              className="w-full bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-blue-700 dark:text-blue-400 font-semibold text-sm px-6 py-2.5 rounded-lg transition-all hover:shadow-md"
               onClick={() => router.push("/login")}
             >
               Iniciar sesión
@@ -347,7 +347,7 @@ export default function RegisterPage() {
             <div className="absolute top-10 left-10 w-32 h-32 bg-white rounded-full blur-3xl"></div>
             <div className="absolute bottom-10 right-10 w-40 h-40 bg-white rounded-full blur-3xl"></div>
           </div>
-          
+
           {/* Contenido ilustrativo */}
           <div className="relative z-10 text-center max-w-md">
             <div className="mb-8 flex justify-center">
@@ -357,14 +357,14 @@ export default function RegisterPage() {
                 </svg>
               </div>
             </div>
-            
+
             <h2 className="text-3xl font-bold text-white mb-4">
               Únete al equipo SIG
             </h2>
             <p className="text-blue-100 text-lg leading-relaxed mb-8">
               Crea tu cuenta y comienza a gestionar cotizaciones de forma profesional
             </p>
-            
+
             {/* Beneficios */}
             <div className="space-y-4 text-left">
               <div className="flex items-start gap-3">
@@ -378,7 +378,7 @@ export default function RegisterPage() {
                   <p className="text-blue-100 text-sm">Comienza a cotizar en minutos</p>
                 </div>
               </div>
-              
+
               <div className="flex items-start gap-3">
                 <div className="flex-shrink-0 w-6 h-6 bg-white/20 rounded-full flex items-center justify-center mt-1">
                   <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">

@@ -17,6 +17,7 @@ import {
   Wrench // Nuevo icono para servicio técnico
 } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
+import { useAuthMigration } from "@/hooks/useAuthMigration"; // Importamos el hook de migración
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -25,21 +26,15 @@ export default function Sidebar() {
   // Estado para controlar si el menú móvil está abierto
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
-  const [usuario, setUsuario] = useState({
+  // Hook de migración y obtención de datos
+  const { userData, isMigrated } = useAuthMigration();
+
+  const usuario = userData || {
     nombre: "Usuario",
     email: "Cargando...",
     rol: "",
-    departamento: "" // Agregamos departamento para la lógica
-  });
-
-  useEffect(() => {
-    const datosGuardados = localStorage.getItem("user_data");
-    if (datosGuardados) {
-      try {
-        setUsuario(JSON.parse(datosGuardados));
-      } catch (e) { console.error(e); }
-    }
-  }, []);
+    departamento: ""
+  };
 
   // Cerrar el menú móvil automáticamente cuando cambiamos de página
   useEffect(() => {
@@ -48,7 +43,9 @@ export default function Sidebar() {
 
   const handleLogout = () => {
     localStorage.removeItem("auth_token");
-    localStorage.removeItem("user_data");
+    localStorage.removeItem("user_data"); // Remove user_data
+    localStorage.removeItem("user");      // Remove user (just in case)
+    localStorage.removeItem("onboarding_completed"); // Optional: reset onboarding
     router.push("/login");
   };
 

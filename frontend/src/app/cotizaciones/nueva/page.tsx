@@ -17,25 +17,26 @@ import {
   MapPin,
   CheckSquare,
   Trash2,
-  Sparkles, 
-  Wand2,    
-  Mail,     
-  Copy,     
+  Sparkles,
+  Wand2,
+  Mail,
+  Copy,
   Paperclip,
   FileCheck,
 } from "lucide-react";
 
-import { 
-  Document, 
-  Page, 
-  Text, 
-  View, 
-  StyleSheet, 
-  PDFDownloadLink, 
-  PDFViewer, 
-  Image 
+import {
+  Document,
+  Page,
+  Text,
+  View,
+  StyleSheet,
+  PDFDownloadLink,
+  PDFViewer,
+  Image
 } from "@react-pdf/renderer";
 import dynamic from "next/dynamic";
+import { toast } from "sonner";
 
 const PDFViewerDynamic = dynamic(
   () => import("@react-pdf/renderer").then((mod) => mod.PDFViewer),
@@ -70,14 +71,14 @@ interface ClientePredefinido {
 
 interface UsuarioRegistrado { id: string; nombre: string; email: string; telefono: string; puesto?: string; departamento?: string; }
 
-interface Tarifa { 
-    id: string | number; 
-    concepto: string; 
-    unidad: "hora" | "dia"; 
-    precio_sin_contrato: number; 
-    precio_con_contrato: number; 
-    moneda?: string;
-    requiere_desglose?: boolean; 
+interface Tarifa {
+  id: string | number;
+  concepto: string;
+  unidad: "hora" | "dia";
+  precio_sin_contrato: number;
+  precio_con_contrato: number;
+  moneda?: string;
+  requiere_desglose?: boolean;
 }
 
 interface DesgloseIngeniero { uid: string; nombre: string; horas: number; }
@@ -86,68 +87,68 @@ interface ServicioTarifado { id: number; tarifaId: string; ingenieros: number; c
 /* ===================== Estilos PDF ===================== */
 
 const pdfStyles = StyleSheet.create({
-  page: { 
-    padding: 35, 
-    fontSize: 10, 
+  page: {
+    padding: 35,
+    fontSize: 10,
     fontFamily: "Helvetica",
   },
-  header: { 
-    flexDirection: "row", 
-    justifyContent: "space-between", 
-    marginBottom: 15, 
-    paddingBottom: 10, 
-    borderBottom: "2px solid #2563eb", 
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 15,
+    paddingBottom: 10,
+    borderBottom: "2px solid #2563eb",
     alignItems: 'center'
   },
-  logo: { 
-    width: 60, 
-    height: 60, 
-    marginBottom: 5, 
-    objectFit: "contain" 
+  logo: {
+    width: 60,
+    height: 60,
+    marginBottom: 5,
+    objectFit: "contain"
   },
-  companyName: { 
-    fontSize: 13, 
-    fontWeight: "bold" 
+  companyName: {
+    fontSize: 13,
+    fontWeight: "bold"
   },
-  headerRight: { 
-    textAlign: "right" 
+  headerRight: {
+    textAlign: "right"
   },
-  section: { 
-    marginBottom: 10, 
+  section: {
+    marginBottom: 10,
   },
-  sectionTitle: { 
-    fontSize: 9, 
-    fontWeight: "bold", 
-    backgroundColor: "#f3f4f6", 
-    padding: 4, 
-    marginBottom: 4 
+  sectionTitle: {
+    fontSize: 9,
+    fontWeight: "bold",
+    backgroundColor: "#f3f4f6",
+    padding: 4,
+    marginBottom: 4
   },
-  row: { 
-    flexDirection: "row", 
-    marginBottom: 10 
+  row: {
+    flexDirection: "row",
+    marginBottom: 10
   },
-  column: { 
-    flex: 1, 
-    marginRight: 10 
+  column: {
+    flex: 1,
+    marginRight: 10
   },
-  label: { 
-    fontSize: 8, 
-    fontWeight: "bold", 
-    marginBottom: 2 
+  label: {
+    fontSize: 8,
+    fontWeight: "bold",
+    marginBottom: 2
   },
-  value: { 
-    fontSize: 9, 
+  value: {
+    fontSize: 9,
     marginBottom: 2,
-    lineHeight: 1.3 
+    lineHeight: 1.3
   },
   // Estilos de Tabla
   table: { marginTop: 10, marginBottom: 15 },
   tableHeader: { flexDirection: "row", backgroundColor: "#f3f4f6", borderBottom: "1px solid #d1d5db", padding: 5, fontWeight: "bold", fontSize: 8 },
   tableRow: { flexDirection: "row", borderBottom: "1px solid #e5e7eb", padding: 5, fontSize: 8 },
-  
-  colDesc: { flex: 2 }, 
-  colTiny: { width: 35, textAlign: "center" }, 
-  colSmall: { width: 55, textAlign: "center" }, 
+
+  colDesc: { flex: 2 },
+  colTiny: { width: 35, textAlign: "center" },
+  colSmall: { width: 55, textAlign: "center" },
 
   total: { flexDirection: "row", justifyContent: "space-between", backgroundColor: "#dbeafe", padding: 6, marginTop: 4, fontWeight: "bold", fontSize: 9 },
   footer: { position: "absolute", bottom: 30, left: 35, right: 35, textAlign: "center", fontSize: 8, color: "#6b7280", borderTop: "1px solid #e5e7eb", paddingTop: 8 },
@@ -167,7 +168,7 @@ interface CotizacionPDFProps {
   aplicarIVA: boolean;
   tarifas: Tarifa[];
   folio: string | null;
-  usuariosRegistrados: UsuarioRegistrado[]; 
+  usuariosRegistrados: UsuarioRegistrado[];
 }
 
 const CotizacionPDF: React.FC<CotizacionPDFProps> = ({ formData, itemsServicio, aplicarIVA, tarifas, folio, usuariosRegistrados }) => {
@@ -175,9 +176,9 @@ const CotizacionPDF: React.FC<CotizacionPDFProps> = ({ formData, itemsServicio, 
   const iva = aplicarIVA ? subtotal * 0.16 : 0;
   const total = subtotal + iva;
   const fecha = new Date().toLocaleDateString("es-MX", { day: "numeric", month: "long", year: "numeric" });
-  
+
   const shipToData = formData.shipToMismoQueFacturar ? formData.facturarA : formData.shipTo;
-  
+
   const puestoUsuario = usuariosRegistrados.find(u => u.email === formData.contactoPrincipal.email)?.puesto || "Coordinador de Servicio Técnico";
   const displayFolio = folio ? folio : "BORRADOR";
 
@@ -195,8 +196,8 @@ const CotizacionPDF: React.FC<CotizacionPDFProps> = ({ formData, itemsServicio, 
           </View>
           <View style={pdfStyles.headerRight}>
             <Text style={{ fontSize: 9, marginBottom: 3 }}>
-                <Text style={{ fontWeight: "bold" }}>COTIZACIÓN No: </Text>
-                {displayFolio}
+              <Text style={{ fontWeight: "bold" }}>COTIZACIÓN No: </Text>
+              {displayFolio}
             </Text>
             <Text style={{ fontSize: 9 }}><Text style={{ fontWeight: "bold" }}>FECHA: </Text>{fecha}</Text>
           </View>
@@ -220,13 +221,13 @@ const CotizacionPDF: React.FC<CotizacionPDFProps> = ({ formData, itemsServicio, 
         </View>
 
         <View style={pdfStyles.row}>
-             <View style={pdfStyles.column}>
-                <Text style={pdfStyles.sectionTitle}>LUGAR DEL SERVICIO (SHIP TO):</Text>
-                <Text style={[pdfStyles.value, { fontWeight: "bold" }]}>{shipToData.nombre || "No especificado"}</Text>
-                <Text style={pdfStyles.value}>{shipToData.direccion || ""}</Text>
-                <Text style={pdfStyles.value}>{shipToData.colonia || ""}</Text>
-                <Text style={pdfStyles.value}>{shipToData.ciudad || ""}{shipToData.cp ? `, C.P. ${shipToData.cp}` : ""}</Text>
-             </View>
+          <View style={pdfStyles.column}>
+            <Text style={pdfStyles.sectionTitle}>LUGAR DEL SERVICIO (SHIP TO):</Text>
+            <Text style={[pdfStyles.value, { fontWeight: "bold" }]}>{shipToData.nombre || "No especificado"}</Text>
+            <Text style={pdfStyles.value}>{shipToData.direccion || ""}</Text>
+            <Text style={pdfStyles.value}>{shipToData.colonia || ""}</Text>
+            <Text style={pdfStyles.value}>{shipToData.ciudad || ""}{shipToData.cp ? `, C.P. ${shipToData.cp}` : ""}</Text>
+          </View>
         </View>
 
         <View style={pdfStyles.row}>
@@ -253,29 +254,29 @@ const CotizacionPDF: React.FC<CotizacionPDFProps> = ({ formData, itemsServicio, 
             <Text style={pdfStyles.colSmall}>P. Unit.</Text>
             <Text style={pdfStyles.colSmall}>Total</Text>
           </View>
-          
+
           {itemsServicio.map((item) => {
             const tarifa = tarifas.find((t) => String(t.id) === item.tarifaId);
             const precioUnitario = item.conContrato
               ? tarifa?.precio_con_contrato || 0
               : tarifa?.precio_sin_contrato || 0;
 
-            const numIngenieros = tarifa?.requiere_desglose && item.desglose && item.desglose.length > 0 
-                ? item.desglose.length 
-                : (item.ingenieros || 1);
+            const numIngenieros = tarifa?.requiere_desglose && item.desglose && item.desglose.length > 0
+              ? item.desglose.length
+              : (item.ingenieros || 1);
 
             return (
               <View key={item.id} style={pdfStyles.tableRow}>
                 <View style={pdfStyles.colDesc}>
                   <Text>{tarifa?.concepto || "No especificado"}</Text>
-                  
+
                   {tarifa?.requiere_desglose && item.desglose.length > 0 && item.desglose.map((d, idx) => (
-                      <Text key={idx} style={{ fontSize: 7, color: "#4b5563", marginLeft: 4, marginTop: 1 }}>• {d.nombre || `Ing. ${idx + 1}`}: {d.horas}h</Text>
+                    <Text key={idx} style={{ fontSize: 7, color: "#4b5563", marginLeft: 4, marginTop: 1 }}>• {d.nombre || `Ing. ${idx + 1}`}: {d.horas}h</Text>
                   ))}
-                  
+
                   {item.detalles && <Text style={{ fontSize: 7, color: "#6b7280", marginTop: 1, fontStyle: 'italic' }}>Nota: {item.detalles}</Text>}
                 </View>
-                
+
                 <Text style={pdfStyles.colTiny}>{numIngenieros}</Text>
                 <Text style={pdfStyles.colSmall}>{item.cantidad}</Text>
                 <Text style={pdfStyles.colSmall}>${precioUnitario.toFixed(2)}</Text>
@@ -347,7 +348,7 @@ interface ModalVistaPreviaProps {
   aplicarIVA: boolean;
   tarifas: Tarifa[];
   folio: string | null;
-  usuariosRegistrados: UsuarioRegistrado[]; 
+  usuariosRegistrados: UsuarioRegistrado[];
 }
 
 const ModalVistaPrevia: React.FC<ModalVistaPreviaProps> = ({ isOpen, onClose, formData, itemsServicio, aplicarIVA, tarifas, folio, usuariosRegistrados }) => {
@@ -367,9 +368,9 @@ const ModalVistaPrevia: React.FC<ModalVistaPreviaProps> = ({ isOpen, onClose, fo
 
   const copiarAlPortapapeles = (texto: string) => {
     if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(texto).then(() => alert("Copiado")).catch(() => copiarFallback(texto));
+      navigator.clipboard.writeText(texto).then(() => toast.success("Copiado")).catch(() => copiarFallback(texto));
     } else {
-        copiarFallback(texto);
+      copiarFallback(texto);
     }
   };
 
@@ -380,66 +381,66 @@ const ModalVistaPrevia: React.FC<ModalVistaPreviaProps> = ({ isOpen, onClose, fo
     textArea.style.left = "-9999px";
     document.body.appendChild(textArea);
     textArea.select();
-    try { document.execCommand('copy'); alert("Copiado"); } catch (err) { alert("No se pudo copiar."); }
+    try { document.execCommand('copy'); toast.success("Copiado"); } catch (err) { toast.error("No se pudo copiar."); }
     document.body.removeChild(textArea);
   };
 
   const generarCorreo = async () => {
     setGenerandoCorreo(true);
     try {
-        const subtotal = itemsServicio.reduce((sum, i) => sum + i.total, 0);
-        const total = subtotal * (aplicarIVA ? 1.16 : 1);
-        
-        const { data } = await api.post("/ia/generar-correo", {
-            cliente: formData.facturarA.nombre,
-            numeroCotizacion: folioParaIA,
-            servicios: itemsServicio.map(i => {
-                const t = tarifas.find(t => String(t.id) === i.tarifaId);
-                return t ? t.concepto : "";
-            }).join(", "),
-            total: total.toFixed(2),
-            moneda: formData.condiciones.moneda
-        });
-        if(data.result) setCorreoGenerado(data.result);
+      const subtotal = itemsServicio.reduce((sum, i) => sum + i.total, 0);
+      const total = subtotal * (aplicarIVA ? 1.16 : 1);
+
+      const { data } = await api.post("/ia/generar-correo", {
+        cliente: formData.facturarA.nombre,
+        numeroCotizacion: folioParaIA,
+        servicios: itemsServicio.map(i => {
+          const t = tarifas.find(t => String(t.id) === i.tarifaId);
+          return t ? t.concepto : "";
+        }).join(", "),
+        total: total.toFixed(2),
+        moneda: formData.condiciones.moneda
+      });
+      if (data.result) setCorreoGenerado(data.result);
     } catch (e) {
-        alert("Error generando correo con IA");
+      toast.error("Error generando correo con IA");
     } finally {
-        setGenerandoCorreo(false);
+      setGenerandoCorreo(false);
     }
   };
 
   const handleDownloadMerged = async () => {
     setIsMerging(true);
     try {
-        const quoteBlob = await pdf(
-            <CotizacionPDF 
-                formData={formData} 
-                itemsServicio={itemsServicio} 
-                aplicarIVA={aplicarIVA} 
-                tarifas={tarifas} 
-                folio={folio}
-                usuariosRegistrados={usuariosRegistrados} 
-            />
-        ).toBlob();
+      const quoteBlob = await pdf(
+        <CotizacionPDF
+          formData={formData}
+          itemsServicio={itemsServicio}
+          aplicarIVA={aplicarIVA}
+          tarifas={tarifas}
+          folio={folio}
+          usuariosRegistrados={usuariosRegistrados}
+        />
+      ).toBlob();
 
-        if (!reporteTecnico) {
-            const url = URL.createObjectURL(quoteBlob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `Cotizacion_${folio || 'Borrador'}.pdf`;
-            link.click();
-            setIsMerging(false);
-            return;
-        }
+      if (!reporteTecnico) {
+        const url = URL.createObjectURL(quoteBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `Cotizacion_${folio || 'Borrador'}.pdf`;
+        link.click();
+        setIsMerging(false);
+        return;
+      }
 
-        const quoteArrayBuffer = await quoteBlob.arrayBuffer();
-        const reportArrayBuffer = await reporteTecnico.arrayBuffer();
-        const mergedPdf = await PDFDocument.create();
-        const quotePdf = await PDFDocument.load(quoteArrayBuffer);
-        const reportPdf = await PDFDocument.load(reportArrayBuffer);
+      const quoteArrayBuffer = await quoteBlob.arrayBuffer();
+      const reportArrayBuffer = await reporteTecnico.arrayBuffer();
+      const mergedPdf = await PDFDocument.create();
+      const quotePdf = await PDFDocument.load(quoteArrayBuffer);
+      const reportPdf = await PDFDocument.load(reportArrayBuffer);
 
-        (await mergedPdf.copyPages(quotePdf, quotePdf.getPageIndices())).forEach(page => mergedPdf.addPage(page));
-        (await mergedPdf.copyPages(reportPdf, reportPdf.getPageIndices())).forEach(page => mergedPdf.addPage(page));
+      (await mergedPdf.copyPages(quotePdf, quotePdf.getPageIndices())).forEach(page => mergedPdf.addPage(page));
+      (await mergedPdf.copyPages(reportPdf, reportPdf.getPageIndices())).forEach(page => mergedPdf.addPage(page));
 
       const mergedPdfBytes = await mergedPdf.save();
       const blob = new Blob([mergedPdfBytes as any], { type: 'application/pdf' });
@@ -451,60 +452,60 @@ const ModalVistaPrevia: React.FC<ModalVistaPreviaProps> = ({ isOpen, onClose, fo
       URL.revokeObjectURL(url);
 
     } catch (error) {
-        console.error(error);
-        alert("Error al fusionar PDFs.");
+      console.error(error);
+      toast.error("Error al fusionar PDFs.");
     } finally {
-        setIsMerging(false);
+      setIsMerging(false);
     }
   };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-7xl h-[90vh] flex flex-row overflow-hidden">
-        <div className="flex-1 flex flex-col border-r border-gray-200">
-            <div className="flex items-center justify-between p-6 border-b">
-                <h2 className="text-2xl font-bold text-gray-800">Vista Previa</h2>
-                <div className="flex items-center gap-3">
-                    <button onClick={handleDownloadMerged} disabled={isMerging} className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all disabled:opacity-50">
-                        {isMerging ? "Generando PDF..." : <><Download size={18} /> {reporteTecnico ? "Descargar Cotización + Reporte" : "Descargar PDF"}</>}
-                    </button>
-                    <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg"><X size={24} /></button>
-                </div>
+      <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-7xl h-[90vh] flex flex-row overflow-hidden border border-gray-200 dark:border-zinc-800">
+        <div className="flex-1 flex flex-col border-r border-gray-200 dark:border-zinc-800">
+          <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-zinc-800">
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Vista Previa</h2>
+            <div className="flex items-center gap-3">
+              <button onClick={handleDownloadMerged} disabled={isMerging} className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all disabled:opacity-50">
+                {isMerging ? "Generando PDF..." : <><Download size={18} /> {reporteTecnico ? "Descargar Cotización + Reporte" : "Descargar PDF"}</>}
+              </button>
+              <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg text-gray-500 dark:text-gray-400"><X size={24} /></button>
             </div>
-            <div className="flex-1 bg-gray-100">
-                <PDFViewerDynamic width="100%" height="100%" className="border-0">
-                    <CotizacionPDF formData={formData} itemsServicio={itemsServicio} aplicarIVA={aplicarIVA} tarifas={tarifas} folio={folio} usuariosRegistrados={usuariosRegistrados} />
-                </PDFViewerDynamic>
-            </div>
+          </div>
+          <div className="flex-1 bg-gray-100 dark:bg-zinc-950">
+            <PDFViewerDynamic width="100%" height="100%" className="border-0">
+              <CotizacionPDF formData={formData} itemsServicio={itemsServicio} aplicarIVA={aplicarIVA} tarifas={tarifas} folio={folio} usuariosRegistrados={usuariosRegistrados} />
+            </PDFViewerDynamic>
+          </div>
         </div>
-        <div className="w-1/3 bg-gray-50 p-6 flex flex-col overflow-y-auto gap-8">
-            <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-                <h3 className="text-sm font-bold text-gray-700 flex items-center gap-2 mb-3"><Paperclip size={16} className="text-blue-600"/> Anexar Reporte Técnico (TSR)</h3>
-                <div {...getRootProps()} className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-400'}`}>
-                    <input {...getInputProps()} />
-                    {reporteTecnico ? (
-                        <div className="flex items-center justify-center gap-2 text-green-600 font-medium">
-                            <FileCheck size={20} /><span className="text-sm truncate max-w-[200px]">{reporteTecnico.name}</span>
-                            <button onClick={(e) => { e.stopPropagation(); setReporteTecnico(null); }} className="ml-2 p-1 hover:bg-red-100 text-red-500 rounded-full"><X size={14}/></button>
-                        </div>
-                    ) : ( <div className="text-gray-500 text-xs"><p className="mb-1">Arrastra tu PDF aquí</p><span className="text-blue-500 underline">o haz clic para buscar</span></div> )}
+        <div className="w-1/3 bg-gray-50 dark:bg-zinc-950 p-6 flex flex-col overflow-y-auto gap-8 border-l border-gray-200 dark:border-zinc-800">
+          <div className="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-gray-200 dark:border-zinc-800 shadow-sm">
+            <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 flex items-center gap-2 mb-3"><Paperclip size={16} className="text-blue-600 dark:text-blue-400" /> Anexar Reporte Técnico (TSR)</h3>
+            <div {...getRootProps()} className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${isDragActive ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-300 dark:border-zinc-700 hover:border-blue-400 dark:hover:border-blue-500'}`}>
+              <input {...getInputProps()} />
+              {reporteTecnico ? (
+                <div className="flex items-center justify-center gap-2 text-green-600 dark:text-green-400 font-medium">
+                  <FileCheck size={20} /><span className="text-sm truncate max-w-[200px]">{reporteTecnico.name}</span>
+                  <button onClick={(e) => { e.stopPropagation(); setReporteTecnico(null); }} className="ml-2 p-1 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-500 dark:text-red-400 rounded-full"><X size={14} /></button>
                 </div>
-                <p className="text-[10px] text-gray-400 mt-2 text-center">Se unirá automáticamente al final de la cotización al descargar.</p>
+              ) : (<div className="text-gray-500 dark:text-gray-400 text-xs"><p className="mb-1">Arrastra tu PDF aquí</p><span className="text-blue-500 dark:text-blue-400 underline">o haz clic para buscar</span></div>)}
             </div>
-            <div>
-                <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2 mb-2"><Sparkles className="text-purple-600" /> Asistente de Envío</h3>
-                <p className="text-sm text-gray-500 mb-4">Genera un correo profesional para acompañar este PDF.</p>
-                <button onClick={generarCorreo} disabled={generandoCorreo} className="w-full py-3 bg-purple-600 text-white rounded-xl font-semibold flex justify-center items-center gap-2 hover:bg-purple-700 transition-all disabled:opacity-50">
-                    {generandoCorreo ? <span className="animate-pulse">Redactando...</span> : <><Mail size={18}/> Generar Correo con IA</>}
-                </button>
-                {correoGenerado && (
-                    <div className="mt-4 flex-1 flex flex-col animate-fadeIn">
-                        <label className="text-xs font-bold text-gray-500 uppercase mb-1">Borrador sugerido:</label>
-                        <textarea className="w-full h-48 p-4 border rounded-xl text-sm text-gray-700 leading-relaxed focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none" value={correoGenerado} readOnly />
-                        <button onClick={() => copiarAlPortapapeles(correoGenerado)} className="mt-3 py-2 border border-gray-300 rounded-lg text-gray-600 font-medium hover:bg-white flex justify-center items-center gap-2"><Copy size={16}/> Copiar Texto</button>
-                    </div>
-                )}
-            </div>
+            <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-2 text-center">Se unirá automáticamente al final de la cotización al descargar.</p>
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2 mb-2"><Sparkles className="text-purple-600 dark:text-purple-400" /> Asistente de Envío</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Genera un correo profesional para acompañar este PDF.</p>
+            <button onClick={generarCorreo} disabled={generandoCorreo} className="w-full py-3 bg-purple-600 dark:bg-purple-700 text-white rounded-xl font-semibold flex justify-center items-center gap-2 hover:bg-purple-700 dark:hover:bg-purple-600 transition-all disabled:opacity-50">
+              {generandoCorreo ? <span className="animate-pulse">Redactando...</span> : <><Mail size={18} /> Generar Correo con IA</>}
+            </button>
+            {correoGenerado && (
+              <div className="mt-4 flex-1 flex flex-col animate-fadeIn">
+                <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Borrador sugerido:</label>
+                <textarea className="w-full h-48 p-4 border border-gray-200 dark:border-zinc-700 rounded-xl text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-zinc-800 leading-relaxed focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none" value={correoGenerado} readOnly />
+                <button onClick={() => copiarAlPortapapeles(correoGenerado)} className="mt-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg text-gray-600 dark:text-gray-300 font-medium hover:bg-white dark:hover:bg-zinc-800 flex justify-center items-center gap-2 transition-colors"><Copy size={16} /> Copiar Texto</button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -515,10 +516,10 @@ const ModalVistaPrevia: React.FC<ModalVistaPreviaProps> = ({ isOpen, onClose, fo
 
 const NuevaCotizacionPage: React.FC = () => {
   const [clientesDisponibles, setClientesDisponibles] = useState<ClientePredefinido[]>([]);
-  const [usuariosRegistrados, setUsuariosRegistrados] = useState<UsuarioRegistrado[]>([]); 
+  const [usuariosRegistrados, setUsuariosRegistrados] = useState<UsuarioRegistrado[]>([]);
   const [tarifasDisponibles, setTarifasDisponibles] = useState<Tarifa[]>([]);
   const [folioGenerado, setFolioGenerado] = useState<string | null>(null);
-  
+
   const [formData, setFormData] = useState<CotizacionFormData>({
     proveedor: { nombre: "SIG Combibloc México, S.A. de C.V.", direccion: "Av. Emilio Castelar No. 75", colonia: "Polanco IV Sección", ciudad: "Ciudad de México", cp: "11550" },
     facturarA: { nombre: "", direccion: "", colonia: "", ciudad: "", cp: "" },
@@ -530,13 +531,13 @@ const NuevaCotizacionPage: React.FC = () => {
   });
 
   const [clienteSeleccionadoId, setClienteSeleccionadoId] = useState<string>("");
-  const [shipToSeleccionadoId, setShipToSeleccionadoId] = useState<string>(""); 
-  const [usuarioSeleccionadoId, setUsuarioSeleccionadoId] = useState<string>(""); 
+  const [shipToSeleccionadoId, setShipToSeleccionadoId] = useState<string>("");
+  const [usuarioSeleccionadoId, setUsuarioSeleccionadoId] = useState<string>("");
   const [modoNuevoCliente, setModoNuevoCliente] = useState<boolean>(false);
   const [itemsServicio, setItemsServicio] = useState<ServicioTarifado[]>([{ id: 1, tarifaId: "", ingenieros: 1, cantidad: 1, conContrato: true, total: 0, detalles: "", desglose: [{ uid: 'init_1', nombre: '', horas: 0 }], },]);
   const [aplicarIVA, setAplicarIVA] = useState<boolean>(true);
   const [modalVistaPreviaAbierto, setModalVistaPreviaAbierto] = useState<boolean>(false);
-  
+
   const [mejorandoTexto, setMejorandoTexto] = useState(false);
   const [textoClienteSucio, setTextoClienteSucio] = useState("");
   const [extrayendoCliente, setExtrayendoCliente] = useState(false);
@@ -554,7 +555,7 @@ const NuevaCotizacionPage: React.FC = () => {
 
     const fetchUsuarios = async () => {
       try {
-        const { data } = await api.get('/usuarios'); 
+        const { data } = await api.get('/usuarios');
         const lista = Array.isArray(data) ? data : data.data || [];
         setUsuariosRegistrados(lista);
       } catch (error) {
@@ -566,13 +567,13 @@ const NuevaCotizacionPage: React.FC = () => {
       try {
         const { data } = await api.get('/servicios');
         const lista: Tarifa[] = (Array.isArray(data) ? data : data.data || []).map((s: any) => ({
-             id: s.id,
-             concepto: s.concepto,
-             unidad: s.unidad,
-             precio_sin_contrato: Number(s.precio_sin_contrato),
-             precio_con_contrato: Number(s.precio_con_contrato),
-             moneda: s.moneda,
-             requiere_desglose: s.concepto.toLowerCase().includes('viaje') 
+          id: s.id,
+          concepto: s.concepto,
+          unidad: s.unidad,
+          precio_sin_contrato: Number(s.precio_sin_contrato),
+          precio_con_contrato: Number(s.precio_con_contrato),
+          moneda: s.moneda,
+          requiere_desglose: s.concepto.toLowerCase().includes('viaje')
         }));
         setTarifasDisponibles(lista);
       } catch (error) {
@@ -586,41 +587,41 @@ const NuevaCotizacionPage: React.FC = () => {
   }, []);
 
   const handleInputChange = <K extends keyof CotizacionFormData>(seccion: K, campo: string, valor: any) => {
-      setFormData((prev) => ({ 
-        ...prev, 
-        [seccion]: { ...(prev[seccion] as Record<string, any> || {}), [campo]: valor } 
-      }));
-    };
+    setFormData((prev) => ({
+      ...prev,
+      [seccion]: { ...(prev[seccion] as Record<string, any> || {}), [campo]: valor }
+    }));
+  };
 
- const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(false)
 
-const handleGuardar = async () => {
+  const handleGuardar = async () => {
     try {
       setLoading(true)
-      
+
       const itemsFormateados = itemsServicio.map(item => {
         const tarifa = tarifasDisponibles.find(t => String(t.id) === item.tarifaId)
         const precioUnitario = item.conContrato
           ? tarifa?.precio_con_contrato || 0
           : tarifa?.precio_sin_contrato || 0
 
-        const cantidadReal = tarifa?.requiere_desglose 
-            ? item.cantidad 
-            : (item.cantidad * (item.ingenieros || 1));
+        const cantidadReal = tarifa?.requiere_desglose
+          ? item.cantidad
+          : (item.cantidad * (item.ingenieros || 1));
 
         return {
           concepto: tarifa?.concepto || 'Servicio no especificado',
-          cantidad: cantidadReal, 
+          cantidad: cantidadReal,
           precioUnitario: precioUnitario,
           total: item.total,
-          detalles: item.detalles || "", 
+          detalles: item.detalles || "",
           desglose: item.desglose || [],
           ingenieros: item.ingenieros || 1
         }
       })
 
       const payload = {
-        cliente_id: clienteSeleccionadoId === "nuevo" ? null : clienteSeleccionadoId, 
+        cliente_id: clienteSeleccionadoId === "nuevo" ? null : clienteSeleccionadoId,
         proveedor: formData.proveedor,
         facturarA: formData.facturarA,
         shipTo: formData.shipTo,
@@ -636,81 +637,81 @@ const handleGuardar = async () => {
         estado: 'borrador'
       }
       const { data } = await api.post('/cotizaciones', payload);
-      
+
       if (data.data && data.data.id) {
-          const nuevoFolio = `SIG-${data.data.id}`; 
-          setFolioGenerado(nuevoFolio);
-          alert(`✅ Cotización guardada exitosamente. Folio asignado: ${nuevoFolio}`);
+        const nuevoFolio = `SIG-${data.data.id}`;
+        setFolioGenerado(nuevoFolio);
+        toast.success(`Cotización guardada exitosamente. Folio asignado: ${nuevoFolio}`);
       } else {
-          alert(`✅ Cotización guardada.`);
+        toast.success("Cotización guardada.");
       }
 
     } catch (error: any) {
       console.error('Error:', error)
       const mensajeError = error.response?.data?.message || error.message || 'Error desconocido';
-      alert('❌ Error al guardar la cotización: ' + mensajeError)
+      toast.error('Error al guardar la cotización', { description: mensajeError });
     } finally {
       setLoading(false)
     }
   }
 
   const handleSelectCliente = (value: string) => {
-  if (value === "nuevo") {
-    setModoNuevoCliente(true);
-    setClienteSeleccionadoId("nuevo");
+    if (value === "nuevo") {
+      setModoNuevoCliente(true);
+      setClienteSeleccionadoId("nuevo");
+      setFormData((prev) => ({
+        ...prev,
+        facturarA: { nombre: "", direccion: "", colonia: "", ciudad: "", cp: "" },
+        contactoSecundario: { nombre: "", email: "", telefono: "" },
+      }));
+      return;
+    }
+
+    setModoNuevoCliente(false);
+    setClienteSeleccionadoId(value);
+
+    const cliente = clientesDisponibles.find((c) => String(c.id) === value);
+    if (!cliente) return;
+
     setFormData((prev) => ({
       ...prev,
-      facturarA: { nombre: "", direccion: "", colonia: "", ciudad: "", cp: "" },
-      contactoSecundario: { nombre: "", email: "", telefono: "" },
+      facturarA: {
+        nombre: cliente.nombre || "",
+        direccion: cliente.direccion || "",
+        colonia: cliente.colonia || "",
+        ciudad: cliente.ciudad || "",
+        cp: cliente.cp || "",
+      },
+      contactoSecundario: {
+        // ✅ aquí el cambio:
+        nombre: (cliente as any).contacto_nombre || "", // o cliente.contacto_nombre si ya lo tienes tipado
+        email: cliente.correo || "",
+        telefono: cliente.telefono || "",
+      },
     }));
-    return;
-  }
-
-  setModoNuevoCliente(false);
-  setClienteSeleccionadoId(value);
-
-  const cliente = clientesDisponibles.find((c) => String(c.id) === value);
-  if (!cliente) return;
-
-  setFormData((prev) => ({
-    ...prev,
-    facturarA: {
-      nombre: cliente.nombre || "",
-      direccion: cliente.direccion || "",
-      colonia: cliente.colonia || "",
-      ciudad: cliente.ciudad || "",
-      cp: cliente.cp || "",
-    },
-    contactoSecundario: {
-      // ✅ aquí el cambio:
-      nombre: (cliente as any).contacto_nombre || "", // o cliente.contacto_nombre si ya lo tienes tipado
-      email: cliente.correo || "",
-      telefono: cliente.telefono || "",
-    },
-  }));
-};
+  };
 
 
   const handleSelectShipTo = (value: string) => {
-      setShipToSeleccionadoId(value);
-      const cliente = clientesDisponibles.find((c) => String(c.id) === value);
-      if (cliente) {
-          setFormData(prev => ({ 
-              ...prev, 
-              shipTo: { 
-                  nombre: cliente.nombre || "", 
-                  direccion: cliente.direccion || "", 
-                  colonia: cliente.colonia || "", 
-                  ciudad: cliente.ciudad || "", 
-                  cp: cliente.cp || ""
-              } 
-          }));
-      } else {
-          setFormData(prev => ({ 
-              ...prev, 
-              shipTo: { nombre: "", direccion: "", colonia: "", ciudad: "", cp: "" } 
-          }));
-      }
+    setShipToSeleccionadoId(value);
+    const cliente = clientesDisponibles.find((c) => String(c.id) === value);
+    if (cliente) {
+      setFormData(prev => ({
+        ...prev,
+        shipTo: {
+          nombre: cliente.nombre || "",
+          direccion: cliente.direccion || "",
+          colonia: cliente.colonia || "",
+          ciudad: cliente.ciudad || "",
+          cp: cliente.cp || ""
+        }
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        shipTo: { nombre: "", direccion: "", colonia: "", ciudad: "", cp: "" }
+      }));
+    }
   }
 
   const toggleShipToMismo = () => { setFormData(prev => ({ ...prev, shipToMismoQueFacturar: !prev.shipToMismoQueFacturar })); };
@@ -719,113 +720,114 @@ const handleGuardar = async () => {
     setUsuarioSeleccionadoId(value);
     const usuario = usuariosRegistrados.find((u) => String(u.id) === value);
     if (usuario) {
-        setFormData((prev) => ({ 
-            ...prev, 
-            contactoPrincipal: { 
-                nombre: usuario.nombre || "", 
-                email: usuario.email || "", 
-                telefono: usuario.telefono || "" 
-            } 
-        }));
+      setFormData((prev) => ({
+        ...prev,
+        contactoPrincipal: {
+          nombre: usuario.nombre || "",
+          email: usuario.email || "",
+          telefono: usuario.telefono || ""
+        }
+      }));
     }
   };
 
   const handleFacturarFieldChange = (campo: keyof FacturarA, valor: string) => { handleInputChange("facturarA", campo, valor); };
 
-  const agregarLineaServicio = () => { setItemsServicio((prev) => [ ...prev, { id: Date.now(), tarifaId: "", ingenieros: 1, cantidad: 1, conContrato: true, total: 0, detalles: "", desglose: [{ uid: Date.now().toString(), nombre: '', horas: 0 }] }, ]); };
+  const agregarLineaServicio = () => { setItemsServicio((prev) => [...prev, { id: Date.now(), tarifaId: "", ingenieros: 1, cantidad: 1, conContrato: true, total: 0, detalles: "", desglose: [{ uid: Date.now().toString(), nombre: '', horas: 0 }] },]); };
 
-  const eliminarLineaServicio = (id: number) => { setItemsServicio((prev) => prev.length > 1 ? prev.filter((i) => i.id !== id) : prev ); };
+  const eliminarLineaServicio = (id: number) => { setItemsServicio((prev) => prev.length > 1 ? prev.filter((i) => i.id !== id) : prev); };
 
   const actualizarLineaServicio = (id: number, campo: keyof Omit<ServicioTarifado, "total">, valor: any) => {
     setItemsServicio((prev) => prev.map((item) => {
-        if (item.id !== id) return item;
-        const updated: ServicioTarifado = { ...item };
-        if (campo === "tarifaId") updated.tarifaId = String(valor);
-        else if (campo === "conContrato") updated.conContrato = Boolean(valor);
-        else if (campo === "detalles") updated.detalles = String(valor);
-        else {
-          if (campo === "ingenieros") {
-            updated.ingenieros = Number(valor) || 0;
-          } else if (campo === "cantidad") {
-            updated.cantidad = Number(valor) || 0;
-          } else if (campo === "id") {
-            updated.id = Number(valor) || updated.id;
-          } else {
-            (updated as any)[campo] = valor;
-          }
+      if (item.id !== id) return item;
+      const updated: ServicioTarifado = { ...item };
+      if (campo === "tarifaId") updated.tarifaId = String(valor);
+      else if (campo === "conContrato") updated.conContrato = Boolean(valor);
+      else if (campo === "detalles") updated.detalles = String(valor);
+      else {
+        if (campo === "ingenieros") {
+          updated.ingenieros = Number(valor) || 0;
+        } else if (campo === "cantidad") {
+          updated.cantidad = Number(valor) || 0;
+        } else if (campo === "id") {
+          updated.id = Number(valor) || updated.id;
+        } else {
+          (updated as any)[campo] = valor;
         }
-        
-        const tarifa = tarifasDisponibles.find((t) => String(t.id) === updated.tarifaId);
-        const requiereDesglose = tarifa?.requiere_desglose;
-        
-        if ((campo === "ingenieros" || campo === "tarifaId") && requiereDesglose) {
-             const diff = updated.ingenieros - updated.desglose.length;
-             if (diff > 0) { for(let i = 0; i < diff; i++) updated.desglose.push({ uid: Math.random().toString(), nombre: '', horas: 0 }); } 
-             else if (diff < 0) { updated.desglose = updated.desglose.slice(0, updated.ingenieros); }
+      }
+
+      const tarifa = tarifasDisponibles.find((t) => String(t.id) === updated.tarifaId);
+      const requiereDesglose = tarifa?.requiere_desglose;
+
+      if ((campo === "ingenieros" || campo === "tarifaId") && requiereDesglose) {
+        const diff = updated.ingenieros - updated.desglose.length;
+        if (diff > 0) { for (let i = 0; i < diff; i++) updated.desglose.push({ uid: Math.random().toString(), nombre: '', horas: 0 }); }
+        else if (diff < 0) { updated.desglose = updated.desglose.slice(0, updated.ingenieros); }
+      }
+      if (tarifa) {
+        const precioUnitario = updated.conContrato ? tarifa.precio_con_contrato : tarifa.precio_sin_contrato;
+        if (requiereDesglose) {
+          const totalHoras = updated.desglose.reduce((acc, curr) => acc + curr.horas, 0);
+          updated.cantidad = totalHoras;
+          updated.total = precioUnitario * totalHoras;
+        } else {
+          updated.total = precioUnitario * updated.ingenieros * updated.cantidad;
         }
-        if (tarifa) {
-          const precioUnitario = updated.conContrato ? tarifa.precio_con_contrato : tarifa.precio_sin_contrato;
-          if (requiereDesglose) {
-              const totalHoras = updated.desglose.reduce((acc, curr) => acc + curr.horas, 0);
-              updated.cantidad = totalHoras; 
-              updated.total = precioUnitario * totalHoras;
-          } else {
-              updated.total = precioUnitario * updated.ingenieros * updated.cantidad;
-          }
-        } else { updated.total = 0; }
-        return updated;
-      })
+      } else { updated.total = 0; }
+      return updated;
+    })
     );
   };
 
   const actualizarDesglose = (itemId: number, indexDesglose: number, campo: 'nombre' | 'horas', valor: any) => {
-      setItemsServicio(prev => prev.map(item => {
-          if(item.id !== itemId) return item;
-          const updated = { ...item };
-          const nuevoDesglose = [...updated.desglose];
-          nuevoDesglose[indexDesglose] = { ...nuevoDesglose[indexDesglose], [campo]: campo === 'horas' ? (Number(valor) || 0) : valor };
-          updated.desglose = nuevoDesglose;
-          
-          const tarifa = tarifasDisponibles.find(t => String(t.id) === updated.tarifaId);
-          if (tarifa && tarifa.requiere_desglose) {
-              const totalHoras = nuevoDesglose.reduce((acc, curr) => acc + curr.horas, 0);
-              updated.cantidad = totalHoras;
-              const precio = updated.conContrato ? tarifa.precio_con_contrato : tarifa.precio_sin_contrato;
-              updated.total = precio * totalHoras;
-          }
-          return updated;
-      }));
+    setItemsServicio(prev => prev.map(item => {
+      if (item.id !== itemId) return item;
+      const updated = { ...item };
+      const nuevoDesglose = [...updated.desglose];
+      nuevoDesglose[indexDesglose] = { ...nuevoDesglose[indexDesglose], [campo]: campo === 'horas' ? (Number(valor) || 0) : valor };
+      updated.desglose = nuevoDesglose;
+
+      const tarifa = tarifasDisponibles.find(t => String(t.id) === updated.tarifaId);
+      if (tarifa && tarifa.requiere_desglose) {
+        const totalHoras = nuevoDesglose.reduce((acc, curr) => acc + curr.horas, 0);
+        updated.cantidad = totalHoras;
+        const precio = updated.conContrato ? tarifa.precio_con_contrato : tarifa.precio_sin_contrato;
+        updated.total = precio * totalHoras;
+      }
+      return updated;
+    }));
   }
 
   const mejorarObservaciones = async () => {
     const textoOriginal = formData.condiciones.observaciones;
-    if (!textoOriginal || textoOriginal.length < 5) { alert("Escribe algo en las observaciones primero."); return; }
+    if (!textoOriginal || textoOriginal.length < 5) { toast.warning("Texto demasiado corto", { description: "Escribe algo en las observaciones primero." }); return; }
     setMejorandoTexto(true);
     try {
       const { data } = await api.post("/ia/mejorar-texto", { text: textoOriginal });
       if (data.result) handleInputChange("condiciones", "observaciones", data.result);
-    } catch (error) { alert("Error al mejorar texto con IA"); } finally { setMejorandoTexto(false); }
+    } catch (error) { toast.error("Error al mejorar texto con IA"); } finally { setMejorandoTexto(false); }
   };
 
   const extraerDatosCliente = async () => {
-      if (!textoClienteSucio) return;
-      setExtrayendoCliente(true);
-      try {
-          const { data } = await api.post("/ia/extraer-cliente", { text: textoClienteSucio });
-          if (data.result) {
-              setFormData(prev => ({
-                  ...prev,
-                  facturarA: {
-                      nombre: data.result.nombre || "",
-                      direccion: data.result.direccion || "",
-                      colonia: data.result.colonia || "",
-                      ciudad: data.result.ciudad || "",
-                      cp: data.result.cp || ""
-                  }
-              }));
-              setTextoClienteSucio(""); 
+    if (!textoClienteSucio) return;
+    setExtrayendoCliente(true);
+    try {
+      const { data } = await api.post("/ia/extraer-cliente", { text: textoClienteSucio });
+      if (data.result) {
+        setFormData(prev => ({
+          ...prev,
+          facturarA: {
+            nombre: data.result.nombre || "",
+            direccion: data.result.direccion || "",
+            colonia: data.result.colonia || "",
+            ciudad: data.result.ciudad || "",
+            cp: data.result.cp || ""
           }
-      } catch (error) { alert("Error extrayendo datos con IA"); } finally { setExtrayendoCliente(false); }
+        }));
+        setTextoClienteSucio("");
+        toast.success("Datos extraídos correctamente");
+      }
+    } catch (error) { toast.error("Error extrayendo datos con IA"); } finally { setExtrayendoCliente(false); }
   }
 
   const subtotalServicios = itemsServicio.reduce((sum, i) => sum + i.total, 0);
@@ -833,216 +835,216 @@ const handleGuardar = async () => {
   const totalServicios = subtotalServicios + ivaServicios;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-zinc-950 dark:to-zinc-900 p-6">
       <div className="max-w-7xl mx-auto">
-        <div className="bg-white rounded-2xl shadow-lg p-8 mb-6 border-t-4 border-blue-600">
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-8 mb-6 border-t-4 border-blue-600 dark:border-blue-500">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-800 mb-2">Cotizador de Servicio Técnico</h1>
-              <p className="text-gray-500">Generación de ofertas para asistencia y soporte en planta.</p>
+              <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">Cotizador de Servicio Técnico</h1>
+              <p className="text-gray-500 dark:text-gray-400">Generación de ofertas para asistencia y soporte en planta.</p>
             </div>
             {/* --- AQUÍ ELIMINÉ EL BOTÓN DE VISTA PREVIA --- */}
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-lg p-8 mb-6">
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-8 mb-6">
           <div className="flex items-center gap-3 mb-6">
-            <div className="p-3 bg-blue-100 rounded-xl"><Building2 className="text-blue-600" size={24} /></div>
-            <div><h2 className="text-2xl font-bold text-gray-800">Información del proveedor</h2><p className="text-sm text-gray-500">Datos fijos de SIG</p></div>
+            <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-xl"><Building2 className="text-blue-600 dark:text-blue-400" size={24} /></div>
+            <div><h2 className="text-2xl font-bold text-gray-800 dark:text-white">Información del proveedor</h2><p className="text-sm text-gray-500 dark:text-gray-400">Datos fijos de SIG</p></div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="md:col-span-2"><label className="block text-sm font-semibold text-gray-700 mb-2">Nombre de la empresa</label><input type="text" value={formData.proveedor.nombre} disabled className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-gray-50 text-gray-700 cursor-not-allowed" /></div>
-            <div><label className="block text-sm font-semibold text-gray-700 mb-2">Dirección</label><input type="text" value={formData.proveedor.direccion} disabled className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-gray-50 text-gray-700 cursor-not-allowed" /></div>
-            <div><label className="block text-sm font-semibold text-gray-700 mb-2">Colonia</label><input type="text" value={formData.proveedor.colonia} disabled className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-gray-50 text-gray-700 cursor-not-allowed" /></div>
-            <div><label className="block text-sm font-semibold text-gray-700 mb-2">Ciudad</label><input type="text" value={formData.proveedor.ciudad} disabled className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-gray-50 text-gray-700 cursor-not-allowed" /></div>
-            <div><label className="block text-sm font-semibold text-gray-700 mb-2">Código postal</label><input type="text" value={formData.proveedor.cp} disabled className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-gray-50 text-gray-700 cursor-not-allowed" /></div>
+            <div className="md:col-span-2"><label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Nombre de la empresa</label><input type="text" value={formData.proveedor.nombre} disabled className="w-full px-4 py-3 border-2 border-gray-200 dark:border-zinc-700 rounded-xl bg-gray-50 dark:bg-zinc-800/50 text-gray-700 dark:text-gray-400 cursor-not-allowed" /></div>
+            <div><label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Dirección</label><input type="text" value={formData.proveedor.direccion} disabled className="w-full px-4 py-3 border-2 border-gray-200 dark:border-zinc-700 rounded-xl bg-gray-50 dark:bg-zinc-800/50 text-gray-700 dark:text-gray-400 cursor-not-allowed" /></div>
+            <div><label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Colonia</label><input type="text" value={formData.proveedor.colonia} disabled className="w-full px-4 py-3 border-2 border-gray-200 dark:border-zinc-700 rounded-xl bg-gray-50 dark:bg-zinc-800/50 text-gray-700 dark:text-gray-400 cursor-not-allowed" /></div>
+            <div><label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Ciudad</label><input type="text" value={formData.proveedor.ciudad} disabled className="w-full px-4 py-3 border-2 border-gray-200 dark:border-zinc-700 rounded-xl bg-gray-50 dark:bg-zinc-800/50 text-gray-700 dark:text-gray-400 cursor-not-allowed" /></div>
+            <div><label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Código postal</label><input type="text" value={formData.proveedor.cp} disabled className="w-full px-4 py-3 border-2 border-gray-200 dark:border-zinc-700 rounded-xl bg-gray-50 dark:bg-zinc-800/50 text-gray-700 dark:text-gray-400 cursor-not-allowed" /></div>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-lg p-8 mb-6">
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-8 mb-6">
           <div className="flex items-center gap-3 mb-6">
-            <div className="p-3 bg-green-100 rounded-xl"><User className="text-green-600" size={24} /></div>
-            <div><h2 className="text-2xl font-bold text-gray-800">Facturar a (Bill To)</h2><p className="text-sm text-gray-500">Selecciona un cliente existente o agrega uno nuevo</p></div>
+            <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-xl"><User className="text-green-600 dark:text-green-400" size={24} /></div>
+            <div><h2 className="text-2xl font-bold text-gray-800 dark:text-white">Facturar a (Bill To)</h2><p className="text-sm text-gray-500 dark:text-gray-400">Selecciona un cliente existente o agrega uno nuevo</p></div>
           </div>
           <div className="mb-6">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Cliente</label>
-            <select value={clienteSeleccionadoId} onChange={(e) => handleSelectCliente(e.target.value)} className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-900 focus:border-blue-500 focus:outline-none transition-colors">
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Cliente</label>
+            <select value={clienteSeleccionadoId} onChange={(e) => handleSelectCliente(e.target.value)} className="w-full px-4 py-3 border-2 border-gray-200 dark:border-zinc-700 rounded-xl text-gray-900 dark:text-white bg-white dark:bg-zinc-800 focus:border-blue-500 focus:outline-none transition-colors">
               <option value="">Selecciona un cliente...</option>
-              {clientesDisponibles.map((c) => ( <option key={c.id} value={c.id}>{c.nombre}</option> ))}
+              {clientesDisponibles.map((c) => (<option key={c.id} value={c.id}>{c.nombre}</option>))}
               <option value="nuevo">➕ Agregar nuevo cliente</option>
             </select>
           </div>
 
           {modoNuevoCliente && (
-              <div className="mb-6 bg-purple-50 p-4 rounded-xl border border-purple-100 animate-fadeIn">
-                  <h3 className="text-sm font-bold text-purple-800 flex items-center gap-2 mb-2"><Wand2 size={16}/> Autocompletar con IA</h3>
-                  <p className="text-xs text-purple-600 mb-3">Pega aquí la firma del correo o los datos fiscales desordenados:</p>
-                  <textarea 
-                      value={textoClienteSucio}
-                      onChange={(e) => setTextoClienteSucio(e.target.value)}
-                      className="w-full p-3 text-sm border border-purple-200 rounded-lg mb-3 focus:outline-none focus:border-purple-500"
-                      placeholder="Ej: Razón Social: Empresa SA de CV, Calle Reforma 222, Col. Juarez, CDMX..."
-                      rows={3}
-                  />
-                  <button 
-                      onClick={extraerDatosCliente}
-                      disabled={extrayendoCliente || !textoClienteSucio}
-                      className="bg-purple-600 text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-purple-700 transition-all disabled:opacity-50"
-                  >
-                      {extrayendoCliente ? "Analizando..." : "Extraer Datos"}
-                  </button>
-              </div>
+            <div className="mb-6 bg-purple-50 dark:bg-purple-900/20 p-4 rounded-xl border border-purple-100 dark:border-purple-900/30 animate-fadeIn">
+              <h3 className="text-sm font-bold text-purple-800 dark:text-purple-300 flex items-center gap-2 mb-2"><Wand2 size={16} /> Autocompletar con IA</h3>
+              <p className="text-xs text-purple-600 dark:text-purple-400 mb-3">Pega aquí la firma del correo o los datos fiscales desordenados:</p>
+              <textarea
+                value={textoClienteSucio}
+                onChange={(e) => setTextoClienteSucio(e.target.value)}
+                className="w-full p-3 text-sm border border-purple-200 dark:border-purple-800 dark:bg-zinc-800 dark:text-gray-200 rounded-lg mb-3 focus:outline-none focus:border-purple-500"
+                placeholder="Ej: Razón Social: Empresa SA de CV, Calle Reforma 222, Col. Juarez, CDMX..."
+                rows={3}
+              />
+              <button
+                onClick={extraerDatosCliente}
+                disabled={extrayendoCliente || !textoClienteSucio}
+                className="bg-purple-600 dark:bg-purple-700 text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-purple-700 dark:hover:bg-purple-600 transition-all disabled:opacity-50"
+              >
+                {extrayendoCliente ? "Analizando..." : "Extraer Datos"}
+              </button>
+            </div>
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="md:col-span-2"><label className="block text-sm font-semibold text-gray-700 mb-2">Nombre del cliente</label><input type="text" value={formData.facturarA.nombre} onChange={(e) => handleFacturarFieldChange("nombre", e.target.value)} className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none transition-colors" placeholder="Nombre o razón social" /></div>
-            <div><label className="block text-sm font-semibold text-gray-700 mb-2">Dirección</label><input type="text" value={formData.facturarA.direccion} onChange={(e) => handleFacturarFieldChange("direccion", e.target.value)} className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none transition-colors" placeholder="Calle, número, etc." /></div>
-            <div><label className="block text-sm font-semibold text-gray-700 mb-2">Colonia</label><input type="text" value={formData.facturarA.colonia} onChange={(e) => handleFacturarFieldChange("colonia", e.target.value)} className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none transition-colors" placeholder="Colonia o barrio" /></div>
-            <div><label className="block text-sm font-semibold text-gray-700 mb-2">Ciudad</label><input type="text" value={formData.facturarA.ciudad} onChange={(e) => handleFacturarFieldChange("ciudad", e.target.value)} className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none transition-colors" placeholder="Ciudad, estado" /></div>
-            <div><label className="block text-sm font-semibold text-gray-700 mb-2">Código postal</label><input type="text" value={formData.facturarA.cp} onChange={(e) => handleFacturarFieldChange("cp", e.target.value)} className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none transition-colors" placeholder="CP" /></div>
+            <div className="md:col-span-2"><label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Nombre del cliente</label><input type="text" value={formData.facturarA.nombre} onChange={(e) => handleFacturarFieldChange("nombre", e.target.value)} className="w-full px-4 py-3 border-2 border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded-xl text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:border-blue-500 focus:outline-none transition-colors" placeholder="Nombre o razón social" /></div>
+            <div><label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Dirección</label><input type="text" value={formData.facturarA.direccion} onChange={(e) => handleFacturarFieldChange("direccion", e.target.value)} className="w-full px-4 py-3 border-2 border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded-xl text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:border-blue-500 focus:outline-none transition-colors" placeholder="Calle, número, etc." /></div>
+            <div><label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Colonia</label><input type="text" value={formData.facturarA.colonia} onChange={(e) => handleFacturarFieldChange("colonia", e.target.value)} className="w-full px-4 py-3 border-2 border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded-xl text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:border-blue-500 focus:outline-none transition-colors" placeholder="Colonia o barrio" /></div>
+            <div><label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Ciudad</label><input type="text" value={formData.facturarA.ciudad} onChange={(e) => handleFacturarFieldChange("ciudad", e.target.value)} className="w-full px-4 py-3 border-2 border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded-xl text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:border-blue-500 focus:outline-none transition-colors" placeholder="Ciudad, estado" /></div>
+            <div><label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Código postal</label><input type="text" value={formData.facturarA.cp} onChange={(e) => handleFacturarFieldChange("cp", e.target.value)} className="w-full px-4 py-3 border-2 border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded-xl text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:border-blue-500 focus:outline-none transition-colors" placeholder="CP" /></div>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-lg p-8 mb-6">
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-8 mb-6">
           <div className="flex items-center gap-3 mb-6">
-            <div className="p-3 bg-teal-100 rounded-xl"><MapPin className="text-teal-600" size={24} /></div>
-            <div><h2 className="text-2xl font-bold text-gray-800">Lugar del servicio (Ship To)</h2><p className="text-sm text-gray-500">Dirección física donde se realizan los trabajos</p></div>
+            <div className="p-3 bg-teal-100 dark:bg-teal-900/30 rounded-xl"><MapPin className="text-teal-600 dark:text-teal-400" size={24} /></div>
+            <div><h2 className="text-2xl font-bold text-gray-800 dark:text-white">Lugar del servicio (Ship To)</h2><p className="text-sm text-gray-500 dark:text-gray-400">Dirección física donde se realizan los trabajos</p></div>
           </div>
-          <div className="mb-6 bg-teal-50 p-4 rounded-xl border border-teal-100 flex items-center gap-3 transition-all hover:border-teal-300 cursor-pointer" onClick={toggleShipToMismo}>
-                <div className={`w-6 h-6 rounded border flex items-center justify-center transition-colors ${formData.shipToMismoQueFacturar ? 'bg-teal-600 border-teal-600' : 'bg-white border-gray-300'}`}>{formData.shipToMismoQueFacturar && <CheckSquare size={16} className="text-white" />}</div>
-                <span className="text-gray-700 font-semibold select-none">Usar la misma dirección y datos que "Facturar A"</span>
+          <div className="mb-6 bg-teal-50 dark:bg-teal-900/10 p-4 rounded-xl border border-teal-100 dark:border-teal-900/30 flex items-center gap-3 transition-all hover:border-teal-300 dark:hover:border-teal-700 cursor-pointer" onClick={toggleShipToMismo}>
+            <div className={`w-6 h-6 rounded border flex items-center justify-center transition-colors ${formData.shipToMismoQueFacturar ? 'bg-teal-600 border-teal-600 dark:bg-teal-500 dark:border-teal-500' : 'bg-white dark:bg-zinc-800 border-gray-300 dark:border-zinc-600'}`}>{formData.shipToMismoQueFacturar && <CheckSquare size={16} className="text-white" />}</div>
+            <span className="text-gray-700 dark:text-gray-300 font-semibold select-none">Usar la misma dirección y datos que "Facturar A"</span>
           </div>
           {!formData.shipToMismoQueFacturar && (
-              <div className="animate-fadeIn">
-                <div className="mb-6">
-                     <label className="block text-sm font-semibold text-gray-700 mb-2">Seleccionar ubicación conocida:</label>
-                     <select value={shipToSeleccionadoId} onChange={(e) => handleSelectShipTo(e.target.value)} className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-900 focus:border-teal-500 focus:outline-none transition-colors">
-                        <option value="">-- Escribir manualmente o seleccionar --</option>
-                        {clientesDisponibles.map(c => ( <option key={c.id} value={c.id}>{c.nombre} - {c.ciudad}</option> ))}
-                     </select>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="md:col-span-2"><label className="block text-sm font-semibold text-gray-700 mb-2">Nombre / Planta</label><input type="text" value={formData.shipTo.nombre} onChange={(e) => setFormData(prev => ({...prev, shipTo: {...prev.shipTo, nombre: e.target.value}}))} className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-900 placeholder:text-gray-400 focus:border-teal-500 focus:outline-none transition-colors" placeholder="Ej: Planta Producción Norte" /></div>
-                    <div><label className="block text-sm font-semibold text-gray-700 mb-2">Dirección</label><input type="text" value={formData.shipTo.direccion} onChange={(e) => setFormData(prev => ({...prev, shipTo: {...prev.shipTo, direccion: e.target.value}}))} className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-900 placeholder:text-gray-400 focus:border-teal-500 focus:outline-none transition-colors" placeholder="Calle, número, etc." /></div>
-                    <div><label className="block text-sm font-semibold text-gray-700 mb-2">Colonia</label><input type="text" value={formData.shipTo.colonia} onChange={(e) => setFormData(prev => ({...prev, shipTo: {...prev.shipTo, colonia: e.target.value}}))} className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-900 placeholder:text-gray-400 focus:border-teal-500 focus:outline-none transition-colors" placeholder="Colonia" /></div>
-                    <div><label className="block text-sm font-semibold text-gray-700 mb-2">Ciudad</label><input type="text" value={formData.shipTo.ciudad} onChange={(e) => setFormData(prev => ({...prev, shipTo: {...prev.shipTo, ciudad: e.target.value}}))} className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-900 placeholder:text-gray-400 focus:border-teal-500 focus:outline-none transition-colors" placeholder="Ciudad" /></div>
-                    <div><label className="block text-sm font-semibold text-gray-700 mb-2">Código postal</label><input type="text" value={formData.shipTo.cp} onChange={(e) => setFormData(prev => ({...prev, shipTo: {...prev.shipTo, cp: e.target.value}}))} className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-900 placeholder:text-gray-400 focus:border-teal-500 focus:outline-none transition-colors" placeholder="CP" /></div>
-                </div>
+            <div className="animate-fadeIn">
+              <div className="mb-6">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Seleccionar ubicación conocida:</label>
+                <select value={shipToSeleccionadoId} onChange={(e) => handleSelectShipTo(e.target.value)} className="w-full px-4 py-3 border-2 border-gray-200 dark:border-zinc-700 rounded-xl text-gray-900 dark:text-white bg-white dark:bg-zinc-800 focus:border-teal-500 focus:outline-none transition-colors">
+                  <option value="">-- Escribir manualmente o seleccionar --</option>
+                  {clientesDisponibles.map(c => (<option key={c.id} value={c.id}>{c.nombre} - {c.ciudad}</option>))}
+                </select>
               </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="md:col-span-2"><label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Nombre / Planta</label><input type="text" value={formData.shipTo.nombre} onChange={(e) => setFormData(prev => ({ ...prev, shipTo: { ...prev.shipTo, nombre: e.target.value } }))} className="w-full px-4 py-3 border-2 border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded-xl text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:border-teal-500 focus:outline-none transition-colors" placeholder="Ej: Planta Producción Norte" /></div>
+                <div><label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Dirección</label><input type="text" value={formData.shipTo.direccion} onChange={(e) => setFormData(prev => ({ ...prev, shipTo: { ...prev.shipTo, direccion: e.target.value } }))} className="w-full px-4 py-3 border-2 border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded-xl text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:border-teal-500 focus:outline-none transition-colors" placeholder="Calle, número, etc." /></div>
+                <div><label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Colonia</label><input type="text" value={formData.shipTo.colonia} onChange={(e) => setFormData(prev => ({ ...prev, shipTo: { ...prev.shipTo, colonia: e.target.value } }))} className="w-full px-4 py-3 border-2 border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded-xl text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:border-teal-500 focus:outline-none transition-colors" placeholder="Colonia" /></div>
+                <div><label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Ciudad</label><input type="text" value={formData.shipTo.ciudad} onChange={(e) => setFormData(prev => ({ ...prev, shipTo: { ...prev.shipTo, ciudad: e.target.value } }))} className="w-full px-4 py-3 border-2 border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded-xl text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:border-teal-500 focus:outline-none transition-colors" placeholder="Ciudad" /></div>
+                <div><label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Código postal</label><input type="text" value={formData.shipTo.cp} onChange={(e) => setFormData(prev => ({ ...prev, shipTo: { ...prev.shipTo, cp: e.target.value } }))} className="w-full px-4 py-3 border-2 border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded-xl text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:border-teal-500 focus:outline-none transition-colors" placeholder="CP" /></div>
+              </div>
+            </div>
           )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <div className="bg-white rounded-2xl shadow-lg p-8 relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-4 opacity-5"><Users size={100} /></div>
-            <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2"><Users size={20} className="text-blue-600"/>Solicitante (Quien cotiza)</h3>
-            <div className="mb-6 bg-blue-50 p-4 rounded-xl border border-blue-100">
-                <label className="block text-sm font-bold text-blue-800 mb-2">Seleccionar usuario registrado:</label>
-                <select value={usuarioSeleccionadoId} onChange={(e) => handleSelectUsuario(e.target.value)} className="w-full px-4 py-2 border border-blue-200 rounded-lg text-gray-800 focus:border-blue-500 focus:outline-none bg-white">
-                    <option value="">-- Seleccionar usuario --</option>
-                    {usuariosRegistrados.map(user => ( <option key={user.id} value={user.id}>{user.nombre} - {user.puesto}</option> ))}
-                </select>
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-8 relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-4 opacity-5 dark:opacity-10"><Users size={100} className="dark:text-white" /></div>
+            <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2"><Users size={20} className="text-blue-600 dark:text-blue-400" />Solicitante (Quien cotiza)</h3>
+            <div className="mb-6 bg-blue-50 dark:bg-blue-900/10 p-4 rounded-xl border border-blue-100 dark:border-blue-900/30">
+              <label className="block text-sm font-bold text-blue-800 dark:text-blue-300 mb-2">Seleccionar usuario registrado:</label>
+              <select value={usuarioSeleccionadoId} onChange={(e) => handleSelectUsuario(e.target.value)} className="w-full px-4 py-2 border border-blue-200 dark:border-blue-900/30 rounded-lg text-gray-800 dark:text-white focus:border-blue-500 focus:outline-none bg-white dark:bg-zinc-800">
+                <option value="">-- Seleccionar usuario --</option>
+                {usuariosRegistrados.map(user => (<option key={user.id} value={user.id}>{user.nombre} - {user.puesto}</option>))}
+              </select>
             </div>
             <div className="space-y-4">
-              <div><label className="block text-sm font-semibold text-gray-700 mb-2">Nombre</label><input type="text" value={formData.contactoPrincipal.nombre} onChange={(e) => handleInputChange("contactoPrincipal", "nombre", e.target.value)} className={`w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none transition-colors ${usuarioSeleccionadoId ? 'bg-gray-50' : 'bg-white'}`} placeholder="Nombre completo" /></div>
-              <div><label className="block text-sm font-semibold text-gray-700 mb-2">Email</label><input type="email" value={formData.contactoPrincipal.email} onChange={(e) => handleInputChange("contactoPrincipal", "email", e.target.value)} className={`w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none transition-colors ${usuarioSeleccionadoId ? 'bg-gray-50' : 'bg-white'}`} placeholder="correo@sig.biz" /></div>
-              <div><label className="block text-sm font-semibold text-gray-700 mb-2">Teléfono</label><input type="tel" value={formData.contactoPrincipal.telefono} onChange={(e) => handleInputChange("contactoPrincipal", "telefono", e.target.value)} className={`w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none transition-colors ${usuarioSeleccionadoId ? 'bg-gray-50' : 'bg-white'}`} placeholder="+52 55 1234 5678" /></div>
+              <div><label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Nombre</label><input type="text" value={formData.contactoPrincipal.nombre} onChange={(e) => handleInputChange("contactoPrincipal", "nombre", e.target.value)} className={`w-full px-4 py-3 border-2 border-gray-200 dark:border-zinc-700 rounded-xl text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:border-blue-500 focus:outline-none transition-colors ${usuarioSeleccionadoId ? 'bg-gray-50 dark:bg-zinc-800/50' : 'bg-white dark:bg-zinc-800'}`} placeholder="Nombre completo" /></div>
+              <div><label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Email</label><input type="email" value={formData.contactoPrincipal.email} onChange={(e) => handleInputChange("contactoPrincipal", "email", e.target.value)} className={`w-full px-4 py-3 border-2 border-gray-200 dark:border-zinc-700 rounded-xl text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:border-blue-500 focus:outline-none transition-colors ${usuarioSeleccionadoId ? 'bg-gray-50 dark:bg-zinc-800/50' : 'bg-white dark:bg-zinc-800'}`} placeholder="correo@sig.biz" /></div>
+              <div><label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Teléfono</label><input type="tel" value={formData.contactoPrincipal.telefono} onChange={(e) => handleInputChange("contactoPrincipal", "telefono", e.target.value)} className={`w-full px-4 py-3 border-2 border-gray-200 dark:border-zinc-700 rounded-xl text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:border-blue-500 focus:outline-none transition-colors ${usuarioSeleccionadoId ? 'bg-gray-50 dark:bg-zinc-800/50' : 'bg-white dark:bg-zinc-800'}`} placeholder="+52 55 1234 5678" /></div>
             </div>
           </div>
-          <div className="bg-white rounded-2xl shadow-lg p-8">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">Contacto secundario (Cliente)</h3>
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-8">
+            <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-4">Contacto secundario (Cliente)</h3>
             <div className="space-y-4">
-              <div><label className="block text-sm font-semibold text-gray-700 mb-2">Nombre</label><input type="text" value={formData.contactoSecundario.nombre} onChange={(e) => handleInputChange("contactoSecundario", "nombre", e.target.value)} className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none transition-colors" placeholder="Nombre completo" /></div>
-              <div><label className="block text-sm font-semibold text-gray-700 mb-2">Email</label><input type="email" value={formData.contactoSecundario.email} onChange={(e) => handleInputChange("contactoSecundario", "email", e.target.value)} className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none transition-colors" placeholder="correo@cliente.com" /></div>
-              <div><label className="block text-sm font-semibold text-gray-700 mb-2">Teléfono</label><input type="tel" value={formData.contactoSecundario.telefono} onChange={(e) => handleInputChange("contactoSecundario", "telefono", e.target.value)} className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none transition-colors" placeholder="+52 55 1234 5678" /></div>
+              <div><label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Nombre</label><input type="text" value={formData.contactoSecundario.nombre} onChange={(e) => handleInputChange("contactoSecundario", "nombre", e.target.value)} className="w-full px-4 py-3 border-2 border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded-xl text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:border-blue-500 focus:outline-none transition-colors" placeholder="Nombre completo" /></div>
+              <div><label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Email</label><input type="email" value={formData.contactoSecundario.email} onChange={(e) => handleInputChange("contactoSecundario", "email", e.target.value)} className="w-full px-4 py-3 border-2 border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded-xl text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:border-blue-500 focus:outline-none transition-colors" placeholder="correo@cliente.com" /></div>
+              <div><label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Teléfono</label><input type="tel" value={formData.contactoSecundario.telefono} onChange={(e) => handleInputChange("contactoSecundario", "telefono", e.target.value)} className="w-full px-4 py-3 border-2 border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded-xl text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:border-blue-500 focus:outline-none transition-colors" placeholder="+52 55 1234 5678" /></div>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-lg p-8 mb-6">
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-8 mb-6">
           <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3"><div className="p-3 bg-purple-100 rounded-xl"><FileText className="text-purple-600" size={24} /></div><div><h2 className="text-2xl font-bold text-gray-800">Detalles del servicio</h2><p className="text-sm text-gray-500">Selecciona la tarifa, número de ingenieros y horas/días</p></div></div>
-            <button onClick={agregarLineaServicio} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all">+ Agregar concepto</button>
+            <div className="flex items-center gap-3"><div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-xl"><FileText className="text-purple-600 dark:text-purple-400" size={24} /></div><div><h2 className="text-2xl font-bold text-gray-800 dark:text-white">Detalles del servicio</h2><p className="text-sm text-gray-500 dark:text-gray-400">Selecciona la tarifa, número de ingenieros y horas/días</p></div></div>
+            <button onClick={agregarLineaServicio} className="flex items-center gap-2 px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-xl hover:bg-blue-700 dark:hover:bg-blue-600 transition-all shadow-md hover:shadow-lg">+ Agregar concepto</button>
           </div>
           <div className="space-y-6">
             {itemsServicio.map((item) => {
               // USAR TARIFAS DINÁMICAS
               const tarifa = tarifasDisponibles.find((t) => String(t.id) === item.tarifaId);
               const esViaje = tarifa?.requiere_desglose;
-              
+
               return (
-                <div key={item.id} className="border border-gray-200 rounded-xl p-5 bg-gray-50 relative">
+                <div key={item.id} className="border border-gray-200 dark:border-zinc-700 rounded-xl p-5 bg-gray-50 dark:bg-zinc-800/50 relative">
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-start mb-4">
-                    <div className="md:col-span-2"><label className="block text-xs font-bold text-gray-500 uppercase mb-1">Concepto de servicio</label>
-                    <select value={item.tarifaId} onChange={(e) => actualizarLineaServicio(item.id, "tarifaId", e.target.value)} className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-gray-900 focus:border-blue-500 focus:outline-none bg-white">
+                    <div className="md:col-span-2"><label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Concepto de servicio</label>
+                      <select value={item.tarifaId} onChange={(e) => actualizarLineaServicio(item.id, "tarifaId", e.target.value)} className="w-full px-3 py-2 border-2 border-gray-200 dark:border-zinc-700 rounded-lg text-gray-900 dark:text-white focus:border-blue-500 focus:outline-none bg-white dark:bg-zinc-800">
                         <option value="">Selecciona una tarifa</option>
                         {/* RENDERIZADO DINÁMICO */}
-                        {tarifasDisponibles.map((t) => ( <option key={t.id} value={t.id}>{t.concepto}</option> ))}
-                    </select>
+                        {tarifasDisponibles.map((t) => (<option key={t.id} value={t.id}>{t.concepto}</option>))}
+                      </select>
                     </div>
-                    <div><label className="block text-xs font-bold text-gray-500 uppercase mb-1">N.º de ingenieros</label><input type="number" min={1} value={item.ingenieros} onChange={(e) => actualizarLineaServicio(item.id, "ingenieros", e.target.value)} className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-center text-gray-900 focus:border-blue-500 focus:outline-none bg-white" /></div>
-                    <div><label className="block text-xs font-bold text-gray-500 uppercase mb-1">Total {tarifa?.unidad === "dia" ? "Días" : "Horas"}</label><input type="number" min={1} value={item.cantidad} onChange={(e) => !esViaje && actualizarLineaServicio(item.id, "cantidad", e.target.value)} readOnly={!!esViaje} className={`w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-center font-bold focus:border-blue-500 focus:outline-none ${esViaje ? 'bg-gray-200 text-gray-600' : 'bg-white text-gray-900'}`} /></div>
+                    <div><label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">N.º de ingenieros</label><input type="number" min={1} value={item.ingenieros} onChange={(e) => actualizarLineaServicio(item.id, "ingenieros", e.target.value)} className="w-full px-3 py-2 border-2 border-gray-200 dark:border-zinc-700 rounded-lg text-center text-gray-900 dark:text-white focus:border-blue-500 focus:outline-none bg-white dark:bg-zinc-800" /></div>
+                    <div><label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Total {tarifa?.unidad === "dia" ? "Días" : "Horas"}</label><input type="number" min={1} value={item.cantidad} onChange={(e) => !esViaje && actualizarLineaServicio(item.id, "cantidad", e.target.value)} readOnly={!!esViaje} className={`w-full px-3 py-2 border-2 border-gray-200 dark:border-zinc-700 rounded-lg text-center font-bold focus:border-blue-500 focus:outline-none ${esViaje ? 'bg-gray-200 dark:bg-zinc-700 text-gray-600 dark:text-gray-400' : 'bg-white dark:bg-zinc-800 text-gray-900 dark:text-white'}`} /></div>
                   </div>
                   {esViaje && (
-                      <div className="mb-4 bg-blue-50 border border-blue-200 p-4 rounded-lg animate-fadeIn">
-                          <h4 className="text-sm font-bold text-blue-800 mb-3 flex items-center gap-2"><Users size={16}/> Desglose de horas por Ingeniero</h4>
-                          <div className="space-y-2">{item.desglose.map((d, idx) => ( <div key={idx} className="flex flex-col sm:flex-row gap-3 items-center"><span className="text-xs font-bold text-blue-500 w-8">#{idx + 1}</span><div className="flex-1 w-full"><input type="text" placeholder={`Nombre del Ingeniero ${idx + 1}`} value={d.nombre} onChange={(e) => actualizarDesglose(item.id, idx, 'nombre', e.target.value)} className="w-full px-3 py-2 border border-blue-200 rounded text-sm focus:ring-2 focus:ring-blue-300 outline-none" /></div><div className="w-full sm:w-32 flex items-center gap-2"><input type="number" placeholder="Horas" value={d.horas} onChange={(e) => actualizarDesglose(item.id, idx, 'horas', e.target.value)} className="w-full px-3 py-2 border border-blue-200 rounded text-center font-bold text-sm focus:ring-2 focus:ring-blue-300 outline-none" /><span className="text-xs text-gray-500">hrs</span></div></div> ))}</div>
-                          <div className="mt-3 text-right text-xs font-bold text-blue-700">Suma total de horas: {item.cantidad}</div>
-                      </div>
+                    <div className="mb-4 bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-900/30 p-4 rounded-lg animate-fadeIn">
+                      <h4 className="text-sm font-bold text-blue-800 dark:text-blue-300 mb-3 flex items-center gap-2"><Users size={16} /> Desglose de horas por Ingeniero</h4>
+                      <div className="space-y-2">{item.desglose.map((d, idx) => (<div key={idx} className="flex flex-col sm:flex-row gap-3 items-center"><span className="text-xs font-bold text-blue-500 dark:text-blue-400 w-8">#{idx + 1}</span><div className="flex-1 w-full"><input type="text" placeholder={`Nombre del Ingeniero ${idx + 1}`} value={d.nombre} onChange={(e) => actualizarDesglose(item.id, idx, 'nombre', e.target.value)} className="w-full px-3 py-2 border border-blue-200 dark:border-blue-900/30 dark:bg-zinc-900 dark:text-white rounded text-sm focus:ring-2 focus:ring-blue-300 outline-none" /></div><div className="w-full sm:w-32 flex items-center gap-2"><input type="number" placeholder="Horas" value={d.horas} onChange={(e) => actualizarDesglose(item.id, idx, 'horas', e.target.value)} className="w-full px-3 py-2 border border-blue-200 dark:border-blue-900/30 dark:bg-zinc-900 dark:text-white rounded text-center font-bold text-sm focus:ring-2 focus:ring-blue-300 outline-none" /><span className="text-xs text-gray-500 dark:text-gray-400">hrs</span></div></div>))}</div>
+                      <div className="mt-3 text-right text-xs font-bold text-blue-700 dark:text-blue-300">Suma total de horas: {item.cantidad}</div>
+                    </div>
                   )}
-                  <div className="flex flex-wrap md:flex-nowrap gap-4 items-center justify-between pt-3 border-t border-gray-200 mt-2">
+                  <div className="flex flex-wrap md:flex-nowrap gap-4 items-center justify-between pt-3 border-t border-gray-200 dark:border-zinc-700 mt-2">
                     <div className="flex flex-wrap items-center gap-3">
-                      <span className="text-sm font-semibold text-gray-700">Tipo:</span>
-                      <label className="inline-flex items-center gap-1 text-sm cursor-pointer"><input type="radio" className="accent-blue-600" checked={item.conContrato} onChange={() => actualizarLineaServicio(item.id, "conContrato", true)} /> Con contrato</label>
-                      <label className="inline-flex items-center gap-1 text-sm cursor-pointer"><input type="radio" className="accent-blue-600" checked={!item.conContrato} onChange={() => actualizarLineaServicio(item.id, "conContrato", false)} /> Sin contrato</label>
-                      {tarifa && ( <span className="text-xs text-gray-500 ml-2 hidden sm:inline">(${ (item.conContrato ? tarifa.precio_con_contrato : tarifa.precio_sin_contrato).toFixed(2) } / {tarifa.unidad})</span> )}
+                      <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Tipo:</span>
+                      <label className="inline-flex items-center gap-1 text-sm cursor-pointer text-gray-700 dark:text-gray-300"><input type="radio" className="accent-blue-600" checked={item.conContrato} onChange={() => actualizarLineaServicio(item.id, "conContrato", true)} /> Con contrato</label>
+                      <label className="inline-flex items-center gap-1 text-sm cursor-pointer text-gray-700 dark:text-gray-300"><input type="radio" className="accent-blue-600" checked={!item.conContrato} onChange={() => actualizarLineaServicio(item.id, "conContrato", false)} /> Sin contrato</label>
+                      {tarifa && (<span className="text-xs text-gray-500 dark:text-gray-400 ml-2 hidden sm:inline">(${(item.conContrato ? tarifa.precio_con_contrato : tarifa.precio_sin_contrato).toFixed(2)} / {tarifa.unidad})</span>)}
                     </div>
                     <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
-                      <div className="flex flex-col items-end"><span className="text-xs text-gray-500">Total línea</span><span className="text-xl font-bold text-gray-800">${item.total.toFixed(2)} USD</span></div>
-                      {itemsServicio.length > 1 && ( <button onClick={() => eliminarLineaServicio(item.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Eliminar concepto"><Trash2 size={20}/></button> )}
+                      <div className="flex flex-col items-end"><span className="text-xs text-gray-500 dark:text-gray-400">Total línea</span><span className="text-xl font-bold text-gray-800 dark:text-white">${item.total.toFixed(2)} USD</span></div>
+                      {itemsServicio.length > 1 && (<button onClick={() => eliminarLineaServicio(item.id)} className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors" title="Eliminar concepto"><Trash2 size={20} /></button>)}
                     </div>
                   </div>
-                  {!esViaje && ( <div className="mt-3"><input type="text" placeholder="Detalles adicionales (opcional)" value={item.detalles} onChange={(e) => actualizarLineaServicio(item.id, "detalles", e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded text-sm bg-white focus:border-blue-500 outline-none" /></div> )}
+                  {!esViaje && (<div className="mt-3"><input type="text" placeholder="Detalles adicionales (opcional)" value={item.detalles} onChange={(e) => actualizarLineaServicio(item.id, "detalles", e.target.value)} className="w-full px-3 py-2 border border-gray-200 dark:border-zinc-700 rounded text-sm bg-white dark:bg-zinc-800 dark:text-white focus:border-blue-500 outline-none" /></div>)}
                 </div>
               );
             })}
           </div>
           <div className="mt-6 flex justify-end">
-            <div className="bg-blue-50 rounded-xl p-6 min-w-[300px] shadow-inner">
-              <div className="flex items-center justify-between mb-3 border-b border-blue-200 pb-3"><label htmlFor="aplicarIVA" className="text-gray-700 font-semibold cursor-pointer select-none">Aplicar IVA (16%)</label><input type="checkbox" id="aplicarIVA" checked={aplicarIVA} onChange={(e) => setAplicarIVA(e.target.checked)} className="h-5 w-5 rounded text-blue-600 focus:ring-blue-500 cursor-pointer" /></div>
-              <div className="flex items-center justify-between mb-2"><span className="text-gray-600 font-medium">Subtotal:</span><span className="text-gray-800 font-semibold">${subtotalServicios.toFixed(2)} USD</span></div>
-              <div className="flex items-center justify-between mb-2"><span className="text-gray-600 font-medium">IVA (16%):</span><span className="text-gray-800 font-semibold">${ivaServicios.toFixed(2)} USD</span></div>
-              <div className="border-t-2 border-blue-200 pt-3 mt-3"><div className="flex items-center justify-between"><span className="text-xl font-bold text-gray-800">Total:</span><span className="text-2xl font-bold text-blue-600">${totalServicios.toFixed(2)} USD</span></div></div>
+            <div className="bg-blue-50 dark:bg-blue-900/10 rounded-xl p-6 min-w-[300px] shadow-inner border border-blue-100 dark:border-blue-900/20">
+              <div className="flex items-center justify-between mb-3 border-b border-blue-200 dark:border-blue-900/30 pb-3"><label htmlFor="aplicarIVA" className="text-gray-700 dark:text-gray-200 font-semibold cursor-pointer select-none">Aplicar IVA (16%)</label><input type="checkbox" id="aplicarIVA" checked={aplicarIVA} onChange={(e) => setAplicarIVA(e.target.checked)} className="h-5 w-5 rounded text-blue-600 focus:ring-blue-500 cursor-pointer" /></div>
+              <div className="flex items-center justify-between mb-2"><span className="text-gray-600 dark:text-gray-400 font-medium">Subtotal:</span><span className="text-gray-800 dark:text-white font-semibold">${subtotalServicios.toFixed(2)} USD</span></div>
+              <div className="flex items-center justify-between mb-2"><span className="text-gray-600 dark:text-gray-400 font-medium">IVA (16%):</span><span className="text-gray-800 dark:text-white font-semibold">${ivaServicios.toFixed(2)} USD</span></div>
+              <div className="border-t-2 border-blue-200 dark:border-blue-900/30 pt-3 mt-3"><div className="flex items-center justify-between"><span className="text-xl font-bold text-gray-800 dark:text-white">Total:</span><span className="text-2xl font-bold text-blue-600 dark:text-blue-400">${totalServicios.toFixed(2)} USD</span></div></div>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-lg p-8 mb-6">
-          <div className="flex items-center gap-3 mb-6"><div className="p-3 bg-orange-100 rounded-xl"><Calculator className="text-orange-600" size={24} /></div><div><h2 className="text-2xl font-bold text-gray-800">Condiciones generales</h2><p className="text-sm text-gray-500">Ajusta la moneda, máquina y notas</p></div></div>
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-8 mb-6">
+          <div className="flex items-center gap-3 mb-6"><div className="p-3 bg-orange-100 dark:bg-orange-900/30 rounded-xl"><Calculator className="text-orange-600 dark:text-orange-400" size={24} /></div><div><h2 className="text-2xl font-bold text-gray-800 dark:text-white">Condiciones generales</h2><p className="text-sm text-gray-500 dark:text-gray-400">Ajusta la moneda, máquina y notas</p></div></div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div><label className="block text-sm font-semibold text-gray-700 mb-2">Nota de precios</label><input type="text" value={formData.condiciones.precios} onChange={(e) => handleInputChange("condiciones", "precios", e.target.value)} className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none transition-colors" placeholder="Los precios cotizados no incluyen IVA" /></div>
-            <div><label className="block text-sm font-semibold text-gray-700 mb-2">Moneda</label><select value={formData.condiciones.moneda} onChange={(e) => handleInputChange("condiciones", "moneda", e.target.value)} className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-900 focus:border-blue-500 focus:outline-none transition-colors"><option value="USD">USD</option><option value="MXN">MXN</option><option value="EUR">EUR</option></select></div>
-            <div className="md:col-span-2"><label className="block text-sm font-semibold text-gray-700 mb-2">Máquina / equipo</label><input type="text" value={formData.condiciones.maquina} onChange={(e) => handleInputChange("condiciones", "maquina", e.target.value)} className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none transition-colors" placeholder="Ej: CFA 909-32 8539 51 015" /></div>
+            <div><label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Nota de precios</label><input type="text" value={formData.condiciones.precios} onChange={(e) => handleInputChange("condiciones", "precios", e.target.value)} className="w-full px-4 py-3 border-2 border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded-xl text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:border-blue-500 focus:outline-none transition-colors" placeholder="Los precios cotizados no incluyen IVA" /></div>
+            <div><label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Moneda</label><select value={formData.condiciones.moneda} onChange={(e) => handleInputChange("condiciones", "moneda", e.target.value)} className="w-full px-4 py-3 border-2 border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded-xl text-gray-900 dark:text-white focus:border-blue-500 focus:outline-none transition-colors"><option value="USD">USD</option><option value="MXN">MXN</option><option value="EUR">EUR</option></select></div>
+            <div className="md:col-span-2"><label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Máquina / equipo</label><input type="text" value={formData.condiciones.maquina} onChange={(e) => handleInputChange("condiciones", "maquina", e.target.value)} className="w-full px-4 py-3 border-2 border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded-xl text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:border-blue-500 focus:outline-none transition-colors" placeholder="Ej: CFA 909-32 8539 51 015" /></div>
             <div className="md:col-span-2">
-                <div className="flex justify-between items-end mb-2">
-                    <label className="block text-sm font-semibold text-gray-700">Observaciones</label>
-                    <button onClick={mejorarObservaciones} disabled={mejorandoTexto} className={`text-xs flex items-center gap-1 px-3 py-1 rounded-full transition-all font-bold ${mejorandoTexto ? "bg-purple-100 text-purple-400 cursor-wait" : "bg-purple-100 text-purple-700 hover:bg-purple-200 hover:scale-105"}`}>
-                        <Sparkles size={14} /> {mejorandoTexto ? "Mejorando..." : "Mejorar redacción con IA"}
-                    </button>
-                </div>
-                <textarea rows={4} value={formData.condiciones.observaciones} onChange={(e) => handleInputChange("condiciones", "observaciones", e.target.value)} className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none transition-colors resize-none" placeholder="Notas adicionales..." />
+              <div className="flex justify-between items-end mb-2">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">Observaciones</label>
+                <button onClick={mejorarObservaciones} disabled={mejorandoTexto} className={`text-xs flex items-center gap-1 px-3 py-1 rounded-full transition-all font-bold ${mejorandoTexto ? "bg-purple-100 dark:bg-purple-900/30 text-purple-400 cursor-wait" : "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-900/50 hover:scale-105"}`}>
+                  <Sparkles size={14} /> {mejorandoTexto ? "Mejorando..." : "Mejorar redacción con IA"}
+                </button>
+              </div>
+              <textarea rows={4} value={formData.condiciones.observaciones} onChange={(e) => handleInputChange("condiciones", "observaciones", e.target.value)} className="w-full px-4 py-3 border-2 border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded-xl text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:border-blue-500 focus:outline-none transition-colors resize-none" placeholder="Notas adicionales..." />
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-lg p-6 flex justify-end gap-4 mt-6">
-          <button className="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-all font-semibold">
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-6 flex justify-end gap-4 mt-6">
+          <button className="px-6 py-3 border-2 border-gray-300 dark:border-zinc-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-zinc-800 transition-all font-semibold">
             Cancelar
           </button>
           {/* ✅ NUEVA UBICACIÓN DEL BOTÓN DE VISTA PREVIA */}
-          <button 
-            onClick={() => setModalVistaPreviaAbierto(true)} 
-            className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all shadow-md hover:shadow-lg font-semibold"
+          <button
+            onClick={() => setModalVistaPreviaAbierto(true)}
+            className="flex items-center gap-2 px-6 py-3 bg-blue-600 dark:bg-blue-700 text-white rounded-xl hover:bg-blue-700 dark:hover:bg-blue-600 transition-all shadow-md hover:shadow-lg font-semibold"
           >
             <Eye size={20} /> Vista previa
           </button>
@@ -1050,7 +1052,7 @@ const handleGuardar = async () => {
           <button
             onClick={handleGuardar}
             disabled={loading}
-            className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-all shadow-md hover:shadow-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 px-6 py-3 bg-green-600 dark:bg-green-700 text-white rounded-xl hover:bg-green-700 dark:hover:bg-green-600 transition-all shadow-md hover:shadow-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Save size={20} />
             {loading ? "Guardando..." : "Guardar cotización"}

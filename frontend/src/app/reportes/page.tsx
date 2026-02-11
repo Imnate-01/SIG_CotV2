@@ -11,6 +11,9 @@ export default function ReportesPage() {
   const [data, setData] = useState<any>(null);
   const [prediction, setPrediction] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
+  const [query, setQuery] = useState("");
+  const [showInput, setShowInput] = useState(false);
 
   useEffect(() => {
     const cargarDatos = async () => {
@@ -18,37 +21,6 @@ export default function ReportesPage() {
         // Cargar Dashboard General
         const { data: dashboardData } = await api.get("/reportes/dashboard");
         setData(dashboardData.data);
-
-        // Cargar Predicciones (No bloqueante, pero lo ponemos aquí simple)
-        const { data: predictionRes } = await api.get("/reportes/dashboard/prediction");
-        if (predictionRes.success) {
-          setPrediction(predictionRes.data);
-
-          // Combinar datos para la gráfica
-          // Asumimos que predictionRes.data.prediction trae [{ mes: '2024-02', venta_estimada: 1200 }]
-          // Y dashboardData.data.chartData trae [{ name: 'feb', cotizado: 100, ganado: 50, orden: ... }]
-          // Vamos a mapear la predicción para agregarla visualmente
-
-          const combinedChart = [...dashboardData.data.chartData];
-
-          predictionRes.data.prediction.forEach((p: any) => {
-            // Convertir YYYY-MM a nombre de mes corto
-            const [y, m] = p.mes.split('-');
-            const date = new Date(parseInt(y), parseInt(m) - 1, 1);
-            const mesNombre = date.toLocaleString('es-MX', { month: 'short' });
-
-            // Agregamos un punto de datos que soloc tiene 'pronostico'
-            combinedChart.push({
-              name: mesNombre + " (Est)",
-              pronostico: p.venta_estimada,
-              cotizado: 0,
-              ganado: 0
-            });
-          });
-
-          setData((prev: any) => ({ ...prev, chartData: combinedChart }));
-        }
-
       } catch (error) {
         console.error(error);
       } finally {
@@ -57,6 +29,44 @@ export default function ReportesPage() {
     };
     cargarDatos();
   }, []);
+
+  const handleGeneratePrediction = async () => {
+    setGenerating(true);
+    try {
+      const { data: predictionRes } = await api.post("/reportes/dashboard/prediction", {
+        userQuery: query
+      });
+
+      if (predictionRes.success) {
+        setPrediction(predictionRes.data);
+
+        // Combinar datos para la gráfica
+        const combinedChart = [...data.chartData];
+        // Limpiar predicciones anteriores si las hubiera en el chart
+        const cleanChart = combinedChart.filter(item => !item.name.includes("(Est)"));
+
+        predictionRes.data.prediction.forEach((p: any) => {
+          const [y, m] = p.mes.split('-');
+          const date = new Date(parseInt(y), parseInt(m) - 1, 1);
+          const mesNombre = date.toLocaleString('es-MX', { month: 'short' });
+
+          cleanChart.push({
+            name: mesNombre + " (Est)",
+            pronostico: p.venta_estimada,
+            cotizado: 0,
+            ganado: 0
+          });
+        });
+
+        setData((prev: any) => ({ ...prev, chartData: cleanChart }));
+        setShowInput(false); // Ocultar input tras generar
+      }
+    } catch (error) {
+      console.error("Error generando predicción", error);
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   if (loading) return <div className="p-10 text-center text-gray-500">Calculando métricas...</div>;
   if (!data) return <div className="p-10 text-center">No hay datos disponibles</div>;
@@ -71,46 +81,117 @@ export default function ReportesPage() {
         <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">Métricas de Ventas</h1>
         <p className="text-gray-500 dark:text-gray-400 mb-8">Resumen ejecutivo del rendimiento comercial</p>
 
-        {/* 0. INSIGHTS IA */}
-        {prediction && (
-          <div className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 border border-purple-100 dark:border-purple-800 p-6 rounded-2xl mb-8 relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-4 opacity-10">
-              <Brain size={120} className="text-purple-600" />
-            </div>
-            <div className="relative z-10">
-              <div className="flex items-center gap-2 mb-3">
-                <Sparkles className="text-purple-600 dark:text-purple-400" size={20} />
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Análisis Predictivo IA</h3>
-              </div>
+        {/* 0. INSIGHTS IA (ON-DEMAND) */}
+        <div className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 border border-purple-100 dark:border-purple-800 p-6 rounded-2xl mb-8 relative overflow-hidden transition-all">
+          <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
+            <Brain size={120} className="text-purple-600" />
+          </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div>
-                  <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-                    {prediction.analisis}
-                  </p>
-                  {prediction.alerta && (
-                    <div className="flex items-start gap-3 bg-white/60 dark:bg-black/40 p-3 rounded-lg border border-purple-100 dark:border-purple-800">
-                      <AlertCircle className="text-amber-500 shrink-0 mt-0.5" size={18} />
-                      <p className="text-sm text-gray-800 dark:text-gray-200 font-medium">{prediction.alerta}</p>
-                    </div>
+          <div className="relative z-10">
+            <div className="flex items-center gap-2 mb-4">
+              <Sparkles className="text-purple-600 dark:text-purple-400" size={24} />
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white">Inteligencia de Negocios & Predicción</h3>
+            </div>
+
+            {!prediction && !generating && !showInput && (
+              <div className="flex flex-col items-start gap-4">
+                <p className="text-gray-600 dark:text-gray-300 max-w-2xl">
+                  Utiliza nuestra IA para analizar tus ventas históricas, detectar tendencias y pronosticar los ingresos de los próximos trimestres. Puedes hacer preguntas específicas.
+                </p>
+                <button
+                  onClick={() => setShowInput(true)}
+                  className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-purple-200 dark:shadow-none transition-all flex items-center gap-2"
+                >
+                  <Brain size={18} /> Iniciar Análisis Predictivo
+                </button>
+              </div>
+            )}
+
+            {(showInput || generating) && !prediction && (
+              <div className="w-full max-w-2xl animate-in fade-in slide-in-from-bottom-2">
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                  ¿Tienes alguna pregunta específica para la IA? (Opcional)
+                </label>
+                <textarea
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Ej: ¿Cómo afectará la baja de ventas en diciembre a mi Q1? o simplemente déjalo en blanco para un análisis general."
+                  className="w-full p-4 rounded-xl border border-purple-200 dark:border-purple-800 bg-white/80 dark:bg-black/40 text-gray-800 dark:text-white focus:ring-2 focus:ring-purple-500 outline-none mb-4 min-h-[100px]"
+                  disabled={generating}
+                />
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleGeneratePrediction}
+                    disabled={generating}
+                    className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg transition-all flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                  >
+                    {generating ? (
+                      <>
+                        <Sparkles className="animate-spin" size={18} /> Analizando Datos...
+                      </>
+                    ) : (
+                      <>Generar Predicción</>
+                    )}
+                  </button>
+                  {!generating && (
+                    <button
+                      onClick={() => setShowInput(false)}
+                      className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 px-4 py-3 font-medium"
+                    >
+                      Cancelar
+                    </button>
                   )}
                 </div>
+              </div>
+            )}
 
-                <div className="bg-white/50 dark:bg-black/20 rounded-xl p-4">
-                  <h4 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Pronóstico Próximos 3 Meses</h4>
-                  <div className="space-y-3">
-                    {prediction.prediction.map((p: any, idx: number) => (
-                      <div key={idx} className="flex justify-between items-end border-b border-gray-100 dark:border-purple-800/30 pb-2 last:border-0">
-                        <span className="text-sm text-gray-600 dark:text-gray-400">{p.mes}</span>
-                        <span className="font-bold text-purple-700 dark:text-purple-400">${p.venta_estimada.toLocaleString()}</span>
+            {prediction && (
+              <div className="animate-in fade-in zoom-in-95">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div>
+                    <h4 className="text-sm font-bold text-purple-700 dark:text-purple-400 mb-2 uppercase tracking-wider">Análisis Estratégico</h4>
+                    <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4 text-lg">
+                      {prediction.analisis}
+                    </p>
+                    {prediction.alerta && (
+                      <div className="flex items-start gap-3 bg-white/60 dark:bg-black/40 p-4 rounded-xl border border-amber-200 dark:border-amber-900/50 text-amber-900 dark:text-amber-100">
+                        <AlertCircle className="text-amber-500 shrink-0 mt-0.5" size={20} />
+                        <div>
+                          <p className="font-bold text-sm">Observación Importante</p>
+                          <p className="text-sm opacity-90">{prediction.alerta}</p>
+                        </div>
                       </div>
-                    ))}
+                    )}
+                    <button
+                      onClick={() => { setPrediction(null); setShowInput(true); setQuery(""); }}
+                      className="mt-6 text-sm text-purple-600 dark:text-purple-400 font-bold hover:underline"
+                    >
+                      Realizar nueva consulta
+                    </button>
+                  </div>
+
+                  <div className="bg-white/60 dark:bg-black/20 rounded-2xl p-6 border border-white/20">
+                    <h4 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">Pronóstico Próximos 3 Meses</h4>
+                    <div className="space-y-4">
+                      {prediction.prediction.map((p: any, idx: number) => (
+                        <div key={idx} className="flex justify-between items-end border-b border-gray-200 dark:border-gray-700 pb-2 last:border-0">
+                          <span className="text-base font-medium text-gray-600 dark:text-gray-400 capitalize">
+                            {/* Formato seguro de fecha para visualización rápida */}
+                            {p.mes}
+                          </span>
+                          <span className="text-xl font-bold text-purple-700 dark:text-purple-400">${p.venta_estimada.toLocaleString()}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-4 text-xs text-center text-gray-400">
+                      * Estimación basada en histórico. No garantiza resultados futuros.
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
-        )}
+        </div>
 
         {/* 1. KPIS CARDS */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

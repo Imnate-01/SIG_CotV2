@@ -3,6 +3,7 @@ import { Inter } from "next/font/google"; // Usamos Inter, la fuente estándar m
 import "./globals.css";
 import ClientLayout from "@/components/ClientLayout"; // Importamos nuestro nuevo Wrapper
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { Toaster } from "sonner"; // Importamos el Toaster
 
 // Cargamos la fuente
 const inter = Inter({ subsets: ["latin"] });
@@ -25,6 +26,8 @@ export default function RootLayout({
           <ClientLayout>
             {children}
           </ClientLayout>
+          {/* Componente Toaster para notificaciones */}
+          <Toaster position="top-right" richColors closeButton />
         </ThemeProvider>
       </body>
     </html>

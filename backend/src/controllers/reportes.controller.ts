@@ -107,64 +107,107 @@ export class ReportesController {
       const token = req.headers.authorization?.split(' ')[1];
       if (!token) return res.status(401).json({ success: false, error: "No autorizado" });
 
+      const { userQuery } = req.body; // New: User's specific question
+
       const supabaseUser = createClientForUser(token);
 
-      // Obtener datos históricos (últimos 12 meses)
+      // 1. Obtener datos históricos y contexto (últimos 12 meses)
       const { data: cotizaciones, error } = await supabaseUser
         .from('cotizaciones')
-        .select(`total, fecha_creacion, estado`)
+        .select(`
+          total, fecha_creacion, estado, tipo_servicio,
+          clientes ( nombre )
+        `)
         .order('fecha_creacion', { ascending: true });
 
       if (error) throw error;
 
-      // Agrupar por mes
+      // 2. Procesar Datos para Contexto
       const history: any = {};
+      const clientsMap: any = {};
+      const servicesMap: any = {};
+
       cotizaciones?.forEach((cot: any) => {
         const fecha = new Date(cot.fecha_creacion);
+        // Filtro de 12 meses atrás approx (opcional, por ahora enviamos todo lo que traiga)
         const mesKey = `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}`;
         const monto = Number(cot.total) || 0;
 
-        if (!history[mesKey]) history[mesKey] = 0;
-        if (cot.estado === 'aceptada') history[mesKey] += monto;
+        // Historial Mensual (Solo ganadas para predicción financiera real, o todo para tendencia de demanda)
+        // Para predicción de ventas, usaremos solo 'aceptada'.
+        if (cot.estado === 'aceptada') {
+          if (!history[mesKey]) history[mesKey] = 0;
+          history[mesKey] += monto;
+
+          // Top Clientes
+          const clientName = cot.clientes?.nombre || 'Desconocido';
+          clientsMap[clientName] = (clientsMap[clientName] || 0) + monto;
+
+          // Servicios
+          const service = cot.tipo_servicio || 'General';
+          servicesMap[service] = (servicesMap[service] || 0) + monto;
+        }
       });
 
-      // Preparar prompt para Gemini
+      // Formatear para Prompt
       const historyText = Object.entries(history)
+        .sort()
         .map(([mes, total]) => `Mes ${mes}: $${total}`)
         .join('\n');
 
+      const topClientsText = Object.entries(clientsMap)
+        .sort(([, a]: any, [, b]: any) => b - a)
+        .slice(0, 5)
+        .map(([c, v]) => `- ${c}: $${v}`)
+        .join('\n');
+
+      const servicesText = Object.entries(servicesMap)
+        .sort(([, a]: any, [, b]: any) => b - a)
+        .map(([s, v]) => `- ${s}: $${v}`)
+        .join('\n');
+
+      // 3. Construir Prompt Especializado
       const prompt = `
-        Analiza el siguiente historial de ventas mensuales y genera una predicción para los próximos 3 meses.
+        Actúa como un Analista de Datos Senior y Estratega Comercial para SIG Combibloc.
+        Tienes acceso a los siguientes datos históricos de ventas (moneda local):
         
-        Historial:
+        [Historial Mensual (Ventas Ganadas)]
         ${historyText}
+
+        [Top Clientes]
+        ${topClientsText}
+
+        [Ventas por Tipo de Servicio]
+        ${servicesText}
+
+        ${userQuery ? `[Pregunta Específica del Usuario]\n"${userQuery}"` : ""}
         
         Instrucciones:
-        1. Devuelve un JSON con la predicción de ventas para los siguientes 3 meses.
-        2. Incluye un breve análisis de tendencia (máx 20 palabras).
-        3. Si detectas una anomalía o tendencia importante, agrégala como alerta.
+        1. Genera una predicción de ventas para los próximos 3 meses basada en la tendencia histórica.
+        2. ${userQuery ? "Responde directamente a la pregunta del usuario usando los datos provistos." : "Realiza un análisis breve de la tendencia actual."}
+        3. Identifica patrones, estacionalidad o riesgos basados en la concentración de clientes o servicios.
         
-        Formato JSON esperado:
+        Formato de Salida (JSON exlusivamente):
         {
           "prediction": [
             { "mes": "YYYY-MM", "venta_estimada": 0 },
             { "mes": "YYYY-MM", "venta_estimada": 0 },
             { "mes": "YYYY-MM", "venta_estimada": 0 }
           ],
-          "analisis": "Texto del análisis aquí",
-          "alerta": "Texto de alerta aquí (opcional)"
+          "analisis": "Texto del análisis estratégico aquí (max 60 palabras). Responder a la pregunta si existe.",
+          "alerta": "Alguna advertencia crítica o oportunidad detectada (opcional, max 15 palabras)."
         }
       `;
 
-      // Llamar a Gemini
-      const { callGemini } = require('../utils/gemini'); // Import dinámico para evitar conflictos circulares si los hubiera, o simple clean code
+      // 4. Llamar a Gemini
+      const { callGemini } = require('../utils/gemini');
       let aiResponse = await callGemini(prompt);
 
       // Limpiar JSON
       aiResponse = aiResponse.replace(/```json/g, "").replace(/```/g, "").trim();
       const predictionData = JSON.parse(aiResponse);
 
-      res.json({ success: true, data: predictionData, history });
+      res.json({ success: true, data: predictionData });
 
     } catch (error: any) {
       console.error("Error en predicción:", error);

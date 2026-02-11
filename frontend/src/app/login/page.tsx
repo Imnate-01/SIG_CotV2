@@ -2,7 +2,8 @@
 
 import { FormEvent, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Cookies from "js-cookie"; 
+import Cookies from "js-cookie";
+import { toast } from "sonner"; // Importamos toast
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -10,7 +11,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  // Elimino errorMsg porque usaremos toast
+  // const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // Efecto para cargar el email recordado si existe
   useEffect(() => {
@@ -25,10 +27,10 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setErrorMsg(null);
+    // setErrorMsg(null);
 
     if (!email || !password) {
-      setErrorMsg("Por favor ingresa tu correo y contraseña.");
+      toast.error("Campos vacíos", { description: "Por favor ingresa tu correo y contraseña." });
       return;
     }
 
@@ -51,27 +53,23 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setErrorMsg(data?.message || "Error al iniciar sesión.");
-        return;
+        throw new Error(data.message || "Error al iniciar sesión");
       }
 
       // --- ÉXITO ---
       if (typeof window !== "undefined") {
-        
-        // 1. Guardar Token en Cookie para el Middleware
-        Cookies.set("auth_token", data.token, { 
-            expires: 1, // Expira en 1 día
-            secure: window.location.protocol === 'https:', // Solo seguro en HTTPS (prod)
-            sameSite: 'strict'
-        });
 
-        // 2. Guardar en LocalStorage (Para uso interno de la app/axios)
+        // 1. Guardar Token en Cookies (para Next.js Middleware)
+        Cookies.set("auth_token", data.token, { expires: 7 });
+
+        // 2. Guardar Token y Usuario en LocalStorage (para el Cliente)
         localStorage.setItem("auth_token", data.token);
-
-        // 3. Guardar datos del usuario
+        // BUG FIX: Standardizing on "user_data" key for role-based logic
         localStorage.setItem("user_data", JSON.stringify(data.usuario));
+        // Remove legacy key just in case to prevent confusion
+        localStorage.removeItem("user");
 
-        // 4. Lógica de "Recordar usuario"
+        // 3. Recordar email si el usuario lo pidió
         if (remember) {
           localStorage.setItem("remember_email", email);
         } else {
@@ -81,47 +79,48 @@ export default function LoginPage() {
 
       // 5. REDIRECCIÓN INTELIGENTE BASADA EN ROL/DEPARTAMENTO
       const depto = data.usuario.departamento || "";
-      
+
       // Si el departamento suena a ingeniero o su rol es ingeniero, va directo a reportes
       if (depto.toLowerCase().includes("técnico") || depto.toLowerCase().includes("servicio") || data.usuario.rol === 'ingeniero') {
-         router.push("/reportestec");
+        router.push("/reportestec");
       } else {
-         // Si es ventas, admin o cualquier otro, va al dashboard de cotizaciones
-         router.push("/cotizaciones");
+        // Si es ventas, admin o cualquier otro, va al dashboard de cotizaciones
+        router.push("/cotizaciones");
       }
-      
-      router.refresh(); 
 
-    } catch (err) {
+      router.refresh();
+
+
+    } catch (err: any) {
       console.error(err);
-      setErrorMsg("Error de conexión con el servidor.");
+      toast.error("Error de conexión", { description: err.message || "No se pudo conectar con el servidor." });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-slate-50 flex items-center justify-center p-4">
-      <div className="bg-white shadow-2xl rounded-2xl max-w-6xl w-full flex overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-slate-50 dark:from-zinc-950 dark:via-zinc-900 dark:to-black flex items-center justify-center p-4">
+      <div className="bg-white dark:bg-zinc-900 shadow-2xl rounded-2xl max-w-6xl w-full flex overflow-hidden border border-transparent dark:border-zinc-800">
         {/* Columna IZQUIERDA: formulario */}
         <div className="w-full md:w-1/2 px-8 sm:px-12 lg:px-16 py-12">
           {/* Logo SIG */}
           <div className="mb-8">
-            <img 
-              src="/SIG_logo.png" 
-              alt="Logo SIG" 
-              className="h-16 w-auto object-contain" 
+            <img
+              src="/SIG_logo.png"
+              alt="Logo SIG"
+              className="h-16 w-auto object-contain dark:brightness-100"
             />
           </div>
-          <h1 className="text-4xl font-bold text-slate-900 leading-tight">
+          <h1 className="text-4xl font-bold text-slate-900 dark:text-white leading-tight">
             Bienvenido a
             <br />
-            <span className="bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-blue-600 to-blue-800 dark:from-blue-400 dark:to-blue-600 bg-clip-text text-transparent">
               cotizaciones SIG
             </span>
           </h1>
 
-          <p className="mt-4 text-base text-slate-600">
+          <p className="mt-4 text-base text-slate-600 dark:text-gray-400">
             Inicia sesión con tu cuenta SIG para continuar.
           </p>
 
@@ -129,14 +128,14 @@ export default function LoginPage() {
             <div>
               <label
                 htmlFor="email"
-                className="block text-sm font-semibold text-slate-800 mb-2"
+                className="block text-sm font-semibold text-slate-800 dark:text-gray-200 mb-2"
               >
                 Correo electrónico
               </label>
               <input
                 id="email"
                 type="email"
-                className="w-full rounded-lg border-2 border-slate-200 px-4 py-3 text-base text-slate-900 placeholder-slate-400 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-slate-300"
+                className="w-full rounded-lg border-2 border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-3 text-base text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-500 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-slate-300 dark:hover:border-zinc-600"
                 placeholder="usuario@sig.biz"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -146,14 +145,14 @@ export default function LoginPage() {
             <div>
               <label
                 htmlFor="password"
-                className="block text-sm font-semibold text-slate-800 mb-2"
+                className="block text-sm font-semibold text-slate-800 dark:text-gray-200 mb-2"
               >
                 Contraseña
               </label>
               <input
                 id="password"
                 type="password"
-                className="w-full rounded-lg border-2 border-slate-200 px-4 py-3 text-base text-slate-900 placeholder-slate-400 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-slate-300"
+                className="w-full rounded-lg border-2 border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-3 text-base text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-500 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-slate-300 dark:hover:border-zinc-600"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -167,38 +166,28 @@ export default function LoginPage() {
                   type="checkbox"
                   checked={remember}
                   onChange={(e) => setRemember(e.target.checked)}
-                  className="h-4 w-4 border-slate-300 rounded text-blue-600 focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                  className="h-4 w-4 border-slate-300 dark:border-zinc-600 rounded text-blue-600 focus:ring-2 focus:ring-blue-500 cursor-pointer bg-white dark:bg-zinc-700"
                 />
-                <span className="text-sm text-slate-700 group-hover:text-slate-900">
+                <span className="text-sm text-slate-700 dark:text-gray-300 group-hover:text-slate-900 dark:group-hover:text-white">
                   Recordar sesión
                 </span>
               </label>
 
               <button
                 type="button"
-                className="text-sm text-blue-600 font-semibold hover:text-blue-800 hover:underline transition-colors"
-                onClick={() => alert("Contacta al administrador para restablecer tu contraseña.")}
+                className="text-sm text-blue-600 dark:text-blue-400 font-semibold hover:text-blue-800 dark:hover:text-blue-300 hover:underline transition-colors"
+                onClick={() => toast.info("Restablecer contraseña", { description: "Contacta al administrador del sistema." })}
               >
                 ¿Olvidaste tu contraseña?
               </button>
             </div>
-
-            {/* Mensaje de error */}
-            {errorMsg && (
-              <div className="text-sm text-red-700 bg-red-50 border-l-4 border-red-500 rounded-r-lg px-4 py-3 flex items-start gap-2">
-                <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                </svg>
-                <span>{errorMsg}</span>
-              </div>
-            )}
 
             {/* Botón Iniciar sesión */}
             <button
               type="button"
               onClick={handleSubmit}
               disabled={loading}
-              className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold text-base py-3.5 rounded-lg flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-lg"
+              className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 dark:from-blue-700 dark:to-blue-800 dark:hover:from-blue-600 dark:hover:to-blue-700 text-white font-semibold text-base py-3.5 rounded-lg flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-lg"
             >
               {loading ? (
                 <>
@@ -239,7 +228,7 @@ export default function LoginPage() {
             <div className="absolute top-10 left-10 w-32 h-32 bg-white rounded-full blur-3xl"></div>
             <div className="absolute bottom-10 right-10 w-40 h-40 bg-white rounded-full blur-3xl"></div>
           </div>
-          
+
           {/* Contenido ilustrativo */}
           <div className="relative z-10 text-center max-w-md">
             <div className="mb-8 flex justify-center">
@@ -249,14 +238,14 @@ export default function LoginPage() {
                 </svg>
               </div>
             </div>
-            
+
             <h2 className="text-3xl font-bold text-white mb-4">
               Sistema de Cotizaciones
             </h2>
             <p className="text-blue-100 text-lg leading-relaxed">
               Gestiona tus cotizaciones de manera eficiente y profesional con nuestra plataforma integrada
             </p>
-            
+
             {/* Características destacadas */}
             <div className="mt-10 space-y-4 text-left">
               <div className="flex items-start gap-3">
@@ -270,7 +259,7 @@ export default function LoginPage() {
                   <p className="text-blue-100 text-sm">Acceso instantáneo a tus cotizaciones</p>
                 </div>
               </div>
-              
+
               <div className="flex items-start gap-3">
                 <div className="flex-shrink-0 w-6 h-6 bg-white/20 rounded-full flex items-center justify-center mt-1">
                   <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -284,8 +273,8 @@ export default function LoginPage() {
               </div>
             </div>
           </div>
-          </div>
         </div>
       </div>
-    );
-  }
+    </div>
+  );
+}

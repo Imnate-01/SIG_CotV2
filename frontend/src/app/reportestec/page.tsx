@@ -92,21 +92,21 @@ export default function ReportesTecnicosListadoPage() {
   }, [q, rows]);
 
   return (
-    <div className="min-h-screen bg-slate-50/50 p-6 md:p-8">
+    <div className="min-h-screen bg-slate-50/50 dark:bg-zinc-950 p-6 md:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
-        
+
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Reportes Técnicos</h1>
-            <p className="text-slate-500 mt-1">Gestiona y consulta el historial de inspecciones.</p>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Reportes Técnicos</h1>
+            <p className="text-slate-500 dark:text-gray-400 mt-1">Gestiona y consulta el historial de inspecciones.</p>
           </div>
-          
+
           <div className="flex items-center gap-3">
-             {/* Botón Nuevo con mejor estilo */}
+            {/* Botón Nuevo con mejor estilo */}
             <Link
               href="/reportestec/nuevo"
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl shadow-sm shadow-blue-200 transition-all hover:-translate-y-0.5"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 dark:bg-blue-700 hover:bg-blue-700 dark:hover:bg-blue-600 text-white text-sm font-semibold rounded-xl shadow-sm shadow-blue-200 dark:shadow-none transition-all hover:-translate-y-0.5"
             >
               <Plus size={18} />
               Crear Reporte
@@ -115,20 +115,20 @@ export default function ReportesTecnicosListadoPage() {
         </div>
 
         {/* Filtros y Búsqueda */}
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between">
+        <div className="bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between">
           <div className="relative w-full md:w-96">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-gray-500" size={18} />
             <input
               type="text"
               placeholder="Buscar por folio, cliente, planta..."
-              className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+              className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all placeholder:text-slate-400 dark:placeholder:text-gray-500"
               value={q}
               onChange={(e) => setQ(e.target.value)}
             />
           </div>
-          
+
           <div className="flex items-center gap-2">
-            <button className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 text-sm font-medium rounded-xl hover:bg-slate-50 transition-colors">
+            <button className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-600 dark:text-gray-300 text-sm font-medium rounded-xl hover:bg-slate-50 dark:hover:bg-zinc-700 transition-colors">
               <Filter size={16} />
               Filtros
             </button>
@@ -136,40 +136,40 @@ export default function ReportesTecnicosListadoPage() {
         </div>
 
         {/* Tabla */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm overflow-hidden">
           {loading ? (
             <div className="p-12 text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-slate-500 text-sm">Cargando reportes...</p>
+              <p className="text-slate-500 dark:text-gray-400 text-sm">Cargando reportes...</p>
             </div>
           ) : filtered.length === 0 ? (
             <div className="p-16 text-center flex flex-col items-center">
-              <div className="bg-slate-50 p-4 rounded-full mb-3">
-                <FileText className="text-slate-300" size={32} />
+              <div className="bg-slate-50 dark:bg-zinc-800 p-4 rounded-full mb-3">
+                <FileText className="text-slate-300 dark:text-gray-600" size={32} />
               </div>
-              <h3 className="text-slate-900 font-medium">No se encontraron reportes</h3>
-              <p className="text-slate-500 text-sm mt-1">Intenta con otros términos de búsqueda.</p>
+              <h3 className="text-slate-900 dark:text-white font-medium">No se encontraron reportes</h3>
+              <p className="text-slate-500 dark:text-gray-400 text-sm mt-1">Intenta con otros términos de búsqueda.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left">
-                <thead className="bg-slate-50/50 border-b border-slate-200">
+                <thead className="bg-slate-50/50 dark:bg-zinc-900/50 border-b border-slate-200 dark:border-zinc-800">
                   <tr>
-                    <th className="px-6 py-4 font-semibold text-xs text-slate-500 uppercase tracking-wider">Folio</th>
-                    <th className="px-6 py-4 font-semibold text-xs text-slate-500 uppercase tracking-wider">Cliente / Planta</th>
-                    <th className="px-6 py-4 font-semibold text-xs text-slate-500 uppercase tracking-wider">Fechas</th>
-                    <th className="px-6 py-4 font-semibold text-xs text-slate-500 uppercase tracking-wider">Ingeniero</th>
-                    <th className="px-6 py-4 font-semibold text-xs text-slate-500 uppercase tracking-wider">Estado</th>
-                    <th className="px-6 py-4 font-semibold text-xs text-slate-500 uppercase tracking-wider text-right">Acciones</th>
+                    <th className="px-6 py-4 font-semibold text-xs text-slate-500 dark:text-gray-400 uppercase tracking-wider">Folio</th>
+                    <th className="px-6 py-4 font-semibold text-xs text-slate-500 dark:text-gray-400 uppercase tracking-wider">Cliente / Planta</th>
+                    <th className="px-6 py-4 font-semibold text-xs text-slate-500 dark:text-gray-400 uppercase tracking-wider">Fechas</th>
+                    <th className="px-6 py-4 font-semibold text-xs text-slate-500 dark:text-gray-400 uppercase tracking-wider">Ingeniero</th>
+                    <th className="px-6 py-4 font-semibold text-xs text-slate-500 dark:text-gray-400 uppercase tracking-wider">Estado</th>
+                    <th className="px-6 py-4 font-semibold text-xs text-slate-500 dark:text-gray-400 uppercase tracking-wider text-right">Acciones</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
                   {filtered.map((r) => (
-                    <tr key={r.id} className="hover:bg-slate-50/80 transition-colors group">
-                      
+                    <tr key={r.id} className="hover:bg-slate-50/80 dark:hover:bg-zinc-800/50 transition-colors group">
+
                       {/* Folio */}
                       <td className="px-6 py-4">
-                        <span className="font-mono font-medium text-slate-700 bg-slate-100 px-2 py-1 rounded-md text-xs">
+                        <span className="font-mono font-medium text-slate-700 dark:text-gray-300 bg-slate-100 dark:bg-zinc-800 px-2 py-1 rounded-md text-xs">
                           {r.folio}
                         </span>
                       </td>
@@ -177,16 +177,16 @@ export default function ReportesTecnicosListadoPage() {
                       {/* Cliente */}
                       <td className="px-6 py-4">
                         <div className="flex items-start gap-3">
-                          <div className="mt-1 p-1.5 bg-blue-50 text-blue-600 rounded-lg shrink-0">
+                          <div className="mt-1 p-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg shrink-0">
                             <Building2 size={16} />
                           </div>
                           <div>
-                            <p className="font-semibold text-slate-900">{r.cliente_nombre || "Sin nombre"}</p>
-                            <div className="flex items-center gap-1.5 text-slate-500 text-xs mt-0.5">
+                            <p className="font-semibold text-slate-900 dark:text-white">{r.cliente_nombre || "Sin nombre"}</p>
+                            <div className="flex items-center gap-1.5 text-slate-500 dark:text-gray-400 text-xs mt-0.5">
                               <span>{r.cliente_empresa}</span>
                               {r.planta && (
                                 <>
-                                  <span className="w-1 h-1 bg-slate-300 rounded-full" />
+                                  <span className="w-1 h-1 bg-slate-300 dark:bg-zinc-600 rounded-full" />
                                   <span>{r.planta}</span>
                                 </>
                               )}
@@ -197,12 +197,12 @@ export default function ReportesTecnicosListadoPage() {
 
                       {/* Fechas */}
                       <td className="px-6 py-4">
-                        <div className="flex items-center gap-2 text-slate-600">
-                          <CalendarDays size={14} className="text-slate-400" />
+                        <div className="flex items-center gap-2 text-slate-600 dark:text-gray-300">
+                          <CalendarDays size={14} className="text-slate-400 dark:text-gray-500" />
                           <div className="flex flex-col">
                             <span className="font-medium">{formatDate(r.created_at)}</span>
                             {(r.fecha_inicio || r.fecha_fin) && (
-                              <span className="text-[10px] text-slate-400 uppercase tracking-wide">
+                              <span className="text-[10px] text-slate-400 dark:text-gray-500 uppercase tracking-wide">
                                 Servicio: {formatDate(r.fecha_inicio)}
                               </span>
                             )}
@@ -213,10 +213,10 @@ export default function ReportesTecnicosListadoPage() {
                       {/* Ingeniero (Avatar) */}
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-bold border border-indigo-200">
+                          <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xs font-bold border border-indigo-200 dark:border-indigo-800">
                             {getInitials(r.ingeniero_nombre)}
                           </div>
-                          <span className="text-slate-700 font-medium">
+                          <span className="text-slate-700 dark:text-gray-300 font-medium">
                             {r.ingeniero_nombre?.split(" ")[0] || "—"}
                           </span>
                         </div>
@@ -225,18 +225,16 @@ export default function ReportesTecnicosListadoPage() {
                       {/* Estado */}
                       <td className="px-6 py-4">
                         <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
-                            r.estado === "finalizado"
-                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${r.estado === "finalizado"
+                              ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800"
                               : r.estado === "borrador"
-                              ? "bg-amber-50 text-amber-700 border-amber-200"
-                              : "bg-slate-100 text-slate-600 border-slate-200"
-                          }`}
+                                ? "bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800"
+                                : "bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-gray-400 border-slate-200 dark:border-zinc-700"
+                            }`}
                         >
-                          <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${
-                             r.estado === "finalizado" ? "bg-emerald-500" :
-                             r.estado === "borrador" ? "bg-amber-500" : "bg-slate-400"
-                          }`}></span>
+                          <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${r.estado === "finalizado" ? "bg-emerald-500" :
+                              r.estado === "borrador" ? "bg-amber-500" : "bg-slate-400"
+                            }`}></span>
                           {r.estado.charAt(0).toUpperCase() + r.estado.slice(1)}
                         </span>
                       </td>
@@ -245,7 +243,7 @@ export default function ReportesTecnicosListadoPage() {
                       <td className="px-6 py-4 text-right">
                         <Link
                           href={`/reportestec/${r.id}`}
-                          className="inline-flex items-center justify-center w-8 h-8 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-all"
+                          className="inline-flex items-center justify-center w-8 h-8 text-slate-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-full transition-all"
                           title="Ver detalles"
                         >
                           <ArrowRight size={18} />
@@ -257,11 +255,11 @@ export default function ReportesTecnicosListadoPage() {
               </table>
             </div>
           )}
-          
+
           {/* Footer de tabla (Paginación simple o contador) */}
-          <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/30 flex items-center justify-between">
-            <p className="text-xs text-slate-500">
-              Mostrando <span className="font-semibold text-slate-700">{filtered.length}</span> resultados
+          <div className="px-6 py-4 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/30 dark:bg-zinc-900 flex items-center justify-between">
+            <p className="text-xs text-slate-500 dark:text-gray-400">
+              Mostrando <span className="font-semibold text-slate-700 dark:text-gray-300">{filtered.length}</span> resultados
             </p>
           </div>
         </div>
