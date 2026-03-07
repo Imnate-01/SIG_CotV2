@@ -1,40 +1,43 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { X, ChevronRight, Check, LayoutDashboard, FilePlus, Bell } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 export default function Onboarding() {
+  const t = useTranslations("Onboarding");
+
   const [isVisible, setIsVisible] = useState(false);
   const [step, setStep] = useState(0);
 
   // Pasos del Tour
   const steps = [
     {
-      title: "¡Bienvenido a SIG System!",
-      description: "Estamos felices de tenerte aquí. Vamos a dar un recorrido rápido para que domines tu nuevo sistema de cotizaciones en segundos.",
+      title: t("step1Title"),
+      description: t("step1Desc"),
       icon: <div className="text-4xl">👋</div>,
       color: "bg-blue-600"
     },
     {
-      title: "Tu Tablero de Control",
-      description: "En 'Mis Cotizaciones' tendrás una vista panorámica de todo tu historial. Identifica rápidamente folios ST (Time & Material) y SM (Servicios Mensuales).",
+      title: t("step2Title"),
+      description: t("step2Desc"),
       icon: <LayoutDashboard size={40} className="text-white" />,
       color: "bg-indigo-500"
     },
     {
-      title: "Crea Cotizaciones al Instante",
-      description: "Usa el botón 'Nueva Cotización' en el menú lateral. El sistema detectará automáticamente si es un cliente nuevo o recurrente.",
+      title: t("step3Title"),
+      description: t("step3Desc"),
       icon: <FilePlus size={40} className="text-white" />,
       color: "bg-green-500"
     },
     {
-      title: "Gestión de Aprobaciones",
-      description: "Ahora puedes cambiar el estado de tus cotizaciones a 'Aceptada' y registrar el número de Orden de Compra (PO) directamente en el sistema.",
+      title: t("step4Title"),
+      description: t("step4Desc"),
       icon: <Check size={40} className="text-white" />,
       color: "bg-purple-500"
     },
     {
-      title: "¡Estás listo!",
-      description: "Ya tienes todo lo necesario para empezar. Si tienes dudas, tu equipo de soporte está a un clic de distancia. ¡Éxito en tus ventas!",
+      title: t("step5Title"),
+      description: t("step5Desc"),
       icon: <div className="text-4xl">🚀</div>,
       color: "bg-slate-800"
     }
@@ -126,11 +129,11 @@ export default function Onboarding() {
           >
             {step === steps.length - 1 ? (
               <>
-                ¡Comenzar a trabajar! 🚀
+                {t("btnStart")}
               </>
             ) : (
               <>
-                Siguiente <ChevronRight size={20} />
+                {t("btnNext")} <ChevronRight size={20} />
               </>
             )}
           </button>
@@ -141,7 +144,7 @@ export default function Onboarding() {
               onClick={handleClose}
               className="mt-4 text-sm text-slate-400 dark:text-gray-500 hover:text-slate-600 dark:hover:text-gray-300 font-medium"
             >
-              Saltar introducción
+              {t("btnSkip")}
             </button>
           )}
         </div>

@@ -1,8 +1,9 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/routing";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 
 export default function RegisterPage() {
   const [nombre, setNombre] = useState("");
@@ -18,45 +19,46 @@ export default function RegisterPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState(false);
 
-  // Validación en tiempo real de la contraseña
+  const t = useTranslations("Register");
+
   const passwordStrength = () => {
     if (password.length === 0) return { text: "", color: "" };
-    if (password.length < 8) return { text: "Débil", color: "text-red-600" };
-    if (password.length < 12) return { text: "Media", color: "text-yellow-600" };
-    return { text: "Fuerte", color: "text-green-600" };
+    if (password.length < 8) return { text: t("strengthWeak"), color: "text-red-600" };
+    if (password.length < 12) return { text: t("strengthMedium"), color: "text-yellow-600" };
+    return { text: t("strengthStrong"), color: "text-green-600" };
   };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
 
-    // Validaciones básicas
     if (!nombre || !email || !departamento || !password || !password2) {
-      setErrorMsg("Por favor completa todos los campos.");
+      setErrorMsg(t("errorEmpty"));
       return;
     }
 
     if (password !== password2) {
-      setErrorMsg("Las contraseñas no coinciden.");
+      setErrorMsg(t("errorMismatch"));
       return;
     }
 
     if (password.length < 8) {
-      setErrorMsg("La contraseña debe tener al menos 8 caracteres.");
+      setErrorMsg(t("errorMinLength"));
       return;
     }
 
-    // Regla de dominio SIG
     const emailLower = email.toLowerCase().trim();
     if (!emailLower.endsWith("@sig.biz")) {
-      setErrorMsg("Solo se permiten correos corporativos @sig.biz.");
+      setErrorMsg(t("errorDomain"));
       return;
     }
+
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
     try {
       setLoading(true);
 
-      const res = await fetch("http://localhost:3001/api/auth/register", {
+      const res = await fetch(`${API_URL}/api/auth/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -73,18 +75,18 @@ export default function RegisterPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setErrorMsg(data?.message || "Error al crear la cuenta.");
+        setErrorMsg(data?.message || t("errorConnection"));
         return;
       }
 
-      // Mostrar éxito
       setSuccessMsg(true);
       setTimeout(() => {
-        toast.success("Cuenta creada correctamente. Ahora puedes iniciar sesión.");
+        toast.success(t("successToast"));
+        router.push("/login");
       }, 1000);
     } catch (err) {
       console.error(err);
-      setErrorMsg("Error de conexión con el servidor.");
+      setErrorMsg(t("errorConnection"));
     } finally {
       setLoading(false);
     }
@@ -95,9 +97,7 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-slate-50 dark:from-zinc-950 dark:via-zinc-900 dark:to-black flex items-center justify-center p-4">
       <div className="bg-white dark:bg-zinc-900 shadow-2xl rounded-2xl max-w-6xl w-full flex overflow-hidden border border-transparent dark:border-zinc-800">
-        {/* Columna IZQUIERDA: formulario */}
         <div className="w-full md:w-1/2 px-8 sm:px-12 lg:px-16 py-12 overflow-y-auto max-h-screen">
-          {/* Logo SIG */}
           <div className="mb-8">
             <img
               src="/SIG_logo.png"
@@ -107,52 +107,46 @@ export default function RegisterPage() {
           </div>
 
           <h1 className="text-4xl font-bold text-slate-900 dark:text-white leading-tight">
-            Crea tu nueva
+            {t("title")}
             <br />
             <span className="bg-gradient-to-r from-blue-600 to-blue-800 dark:from-blue-400 dark:to-blue-600 bg-clip-text text-transparent">
-              cuenta
+              {t("titleHighlight")}
             </span>
           </h1>
 
           <p className="mt-4 text-base text-slate-600 dark:text-gray-400">
-            Complete el formulario para crear su cuenta.
+            {t("subtitle")}
             <br />
             <span className="text-sm text-slate-500 dark:text-gray-500">
-              Recuerde usar su correo corporativo @sig.biz
+              {t("subtitleHint")}
             </span>
           </p>
 
           <div className="mt-8 space-y-4">
             <div>
-              <label
-                htmlFor="nombre"
-                className="block text-sm font-semibold text-slate-800 dark:text-gray-200 mb-2"
-              >
-                Nombre completo
+              <label htmlFor="nombre" className="block text-sm font-semibold text-slate-800 dark:text-gray-200 mb-2">
+                {t("nameLabel")}
               </label>
               <input
                 id="nombre"
                 type="text"
                 className="w-full rounded-lg border-2 border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-3 text-base text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-500 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-slate-300 dark:hover:border-zinc-600"
-                placeholder="Juan Pérez García"
+                placeholder={t("namePlaceholder")}
                 value={nombre}
                 onChange={(e) => setNombre(e.target.value)}
               />
             </div>
 
             <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-semibold text-slate-800 dark:text-gray-200 mb-2"
-              >
-                Correo electrónico corporativo
+              <label htmlFor="email" className="block text-sm font-semibold text-slate-800 dark:text-gray-200 mb-2">
+                {t("emailLabel")}
               </label>
               <div className="relative">
                 <input
                   id="email"
                   type="email"
                   className="w-full rounded-lg border-2 border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-3 text-base text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-500 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-slate-300 dark:hover:border-zinc-600"
-                  placeholder="usuario@sig.biz"
+                  placeholder={t("emailPlaceholder")}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
@@ -167,36 +161,29 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label
-                htmlFor="departamento"
-                className="block text-sm font-semibold text-slate-800 dark:text-gray-200 mb-2"
-              >
-                Área o Departamento
+              <label htmlFor="departamento" className="block text-sm font-semibold text-slate-800 dark:text-gray-200 mb-2">
+                {t("deptLabel")}
               </label>
               <input
                 id="departamento"
                 type="text"
                 className="w-full rounded-lg border-2 border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-3 text-base text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-500 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-slate-300 dark:hover:border-zinc-600"
-                placeholder="Ej. Servicio al cliente, Ingeniería..."
+                placeholder={t("deptPlaceholder")}
                 value={departamento}
                 onChange={(e) => setDepartamento(e.target.value)}
               />
             </div>
 
-            {/* Contraseña */}
             <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-semibold text-slate-800 dark:text-gray-200 mb-2"
-              >
-                Crear contraseña
+              <label htmlFor="password" className="block text-sm font-semibold text-slate-800 dark:text-gray-200 mb-2">
+                {t("passwordLabel")}
               </label>
               <div className="relative">
                 <input
                   id="password"
                   type={showPassword ? "text" : "password"}
                   className="w-full rounded-lg border-2 border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-3 pr-12 text-base text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-500 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-slate-300 dark:hover:border-zinc-600"
-                  placeholder="Mínimo 8 caracteres"
+                  placeholder={t("passwordPlaceholder")}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
@@ -236,20 +223,16 @@ export default function RegisterPage() {
               )}
             </div>
 
-            {/* Confirmar Contraseña */}
             <div>
-              <label
-                htmlFor="password2"
-                className="block text-sm font-semibold text-slate-800 dark:text-gray-200 mb-2"
-              >
-                Confirmar contraseña
+              <label htmlFor="password2" className="block text-sm font-semibold text-slate-800 dark:text-gray-200 mb-2">
+                {t("confirmPasswordLabel")}
               </label>
               <div className="relative">
                 <input
                   id="password2"
                   type={showPassword2 ? "text" : "password"}
                   className="w-full rounded-lg border-2 border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-3 pr-12 text-base text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-500 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-slate-300 dark:hover:border-zinc-600"
-                  placeholder="Repite la contraseña"
+                  placeholder={t("confirmPasswordPlaceholder")}
                   value={password2}
                   onChange={(e) => setPassword2(e.target.value)}
                 />
@@ -279,7 +262,6 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            {/* Mensaje de error */}
             {errorMsg && (
               <div className="text-sm text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 rounded-r-lg px-4 py-3 flex items-start gap-2">
                 <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
@@ -289,17 +271,15 @@ export default function RegisterPage() {
               </div>
             )}
 
-            {/* Mensaje de éxito */}
             {successMsg && (
               <div className="text-sm text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-900/30 border-l-4 border-green-500 rounded-r-lg px-4 py-3 flex items-start gap-2">
                 <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                 </svg>
-                <span>¡Cuenta creada exitosamente!</span>
+                <span>{t("success")}</span>
               </div>
             )}
 
-            {/* Botón Crear cuenta */}
             <button
               type="button"
               onClick={handleSubmit}
@@ -312,11 +292,11 @@ export default function RegisterPage() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  <span>Creando cuenta...</span>
+                  <span>{t("submitting")}</span>
                 </>
               ) : (
                 <>
-                  <span>Crear cuenta</span>
+                  <span>{t("submit")}</span>
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
@@ -325,30 +305,26 @@ export default function RegisterPage() {
             </button>
           </div>
 
-          {/* Ya tienes cuenta */}
           <div className="mt-6 pt-6 border-t border-slate-200 dark:border-zinc-800 text-center">
             <p className="text-sm text-slate-600 dark:text-gray-400 mb-3">
-              ¿Ya tienes una cuenta?
+              {t("hasAccount")}
             </p>
             <button
               type="button"
               className="w-full bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-blue-700 dark:text-blue-400 font-semibold text-sm px-6 py-2.5 rounded-lg transition-all hover:shadow-md"
               onClick={() => router.push("/login")}
             >
-              Iniciar sesión
+              {t("login")}
             </button>
           </div>
         </div>
 
-        {/* Columna DERECHA: ilustración con información */}
         <div className="hidden md:flex w-1/2 bg-gradient-to-br from-emerald-600 to-blue-700 items-center justify-center p-12 relative overflow-hidden">
-          {/* Patrón de fondo decorativo */}
           <div className="absolute inset-0 opacity-10">
             <div className="absolute top-10 left-10 w-32 h-32 bg-white rounded-full blur-3xl"></div>
             <div className="absolute bottom-10 right-10 w-40 h-40 bg-white rounded-full blur-3xl"></div>
           </div>
 
-          {/* Contenido ilustrativo */}
           <div className="relative z-10 text-center max-w-md">
             <div className="mb-8 flex justify-center">
               <div className="w-48 h-48 bg-white/10 backdrop-blur-sm rounded-3xl flex items-center justify-center shadow-2xl">
@@ -359,13 +335,12 @@ export default function RegisterPage() {
             </div>
 
             <h2 className="text-3xl font-bold text-white mb-4">
-              Únete al equipo SIG
+              {t("sideTitle")}
             </h2>
             <p className="text-blue-100 text-lg leading-relaxed mb-8">
-              Crea tu cuenta y comienza a gestionar cotizaciones de forma profesional
+              {t("sideSubtitle")}
             </p>
 
-            {/* Beneficios */}
             <div className="space-y-4 text-left">
               <div className="flex items-start gap-3">
                 <div className="flex-shrink-0 w-6 h-6 bg-white/20 rounded-full flex items-center justify-center mt-1">
@@ -374,8 +349,8 @@ export default function RegisterPage() {
                   </svg>
                 </div>
                 <div>
-                  <p className="text-white font-medium">Acceso inmediato</p>
-                  <p className="text-blue-100 text-sm">Comienza a cotizar en minutos</p>
+                  <p className="text-white font-medium">{t("benefit1Title")}</p>
+                  <p className="text-blue-100 text-sm">{t("benefit1Desc")}</p>
                 </div>
               </div>
 
@@ -386,8 +361,8 @@ export default function RegisterPage() {
                   </svg>
                 </div>
                 <div>
-                  <p className="text-white font-medium">Seguro y confiable</p>
-                  <p className="text-blue-100 text-sm">Tus datos protegidos siempre</p>
+                  <p className="text-white font-medium">{t("benefit2Title")}</p>
+                  <p className="text-blue-100 text-sm">{t("benefit2Desc")}</p>
                 </div>
               </div>
 
@@ -398,8 +373,8 @@ export default function RegisterPage() {
                   </svg>
                 </div>
                 <div>
-                  <p className="text-white font-medium">Soporte dedicado</p>
-                  <p className="text-blue-100 text-sm">Equipo listo para ayudarte</p>
+                  <p className="text-white font-medium">{t("benefit3Title")}</p>
+                  <p className="text-blue-100 text-sm">{t("benefit3Desc")}</p>
                 </div>
               </div>
             </div>

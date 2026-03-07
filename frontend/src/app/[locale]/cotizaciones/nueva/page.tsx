@@ -37,15 +37,16 @@ import {
 } from "@react-pdf/renderer";
 import dynamic from "next/dynamic";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 
 const PDFViewerDynamic = dynamic(
   () => import("@react-pdf/renderer").then((mod) => mod.PDFViewer),
-  { ssr: false, loading: () => <p>Cargando visor...</p> }
+  { ssr: false, loading: () => <p>Loading preview...</p> }
 );
 
 const PDFDownloadLinkDynamic = dynamic(
   () => import("@react-pdf/renderer").then((mod) => mod.PDFDownloadLink),
-  { ssr: false, loading: () => <p>Preparando...</p> }
+  { ssr: false, loading: () => <p>Loading...</p> }
 );
 
 /* ===================== Tipos ===================== */
@@ -366,6 +367,8 @@ interface ModalVistaPreviaProps {
 }
 
 const ModalVistaPrevia: React.FC<ModalVistaPreviaProps> = ({ isOpen, onClose, formData, itemsServicio, aplicarIVA, tarifas, folio, usuariosRegistrados }) => {
+  const t = useTranslations("NuevaCotizacion");
+
   if (!isOpen) return null;
 
   const [correoGenerado, setCorreoGenerado] = useState("");
@@ -382,7 +385,7 @@ const ModalVistaPrevia: React.FC<ModalVistaPreviaProps> = ({ isOpen, onClose, fo
 
   const copiarAlPortapapeles = (texto: string) => {
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(texto).then(() => toast.success("Copiado")).catch(() => copiarFallback(texto));
+      navigator.clipboard.writeText(texto).then(() => toast.success(t("toastCopied"))).catch(() => copiarFallback(texto));
     } else {
       copiarFallback(texto);
     }
@@ -395,7 +398,7 @@ const ModalVistaPrevia: React.FC<ModalVistaPreviaProps> = ({ isOpen, onClose, fo
     textArea.style.left = "-9999px";
     document.body.appendChild(textArea);
     textArea.select();
-    try { document.execCommand('copy'); toast.success("Copiado"); } catch (err) { toast.error("No se pudo copiar."); }
+    try { document.execCommand('copy'); toast.success(t("toastCopied")); } catch (err) { toast.error(t("toastCopyError")); }
     document.body.removeChild(textArea);
   };
 
@@ -417,7 +420,7 @@ const ModalVistaPrevia: React.FC<ModalVistaPreviaProps> = ({ isOpen, onClose, fo
       });
       if (data.result) setCorreoGenerado(data.result);
     } catch (e) {
-      toast.error("Error generando correo con IA");
+      toast.error(t("toastAiError"));
     } finally {
       setGenerandoCorreo(false);
     }
@@ -467,7 +470,7 @@ const ModalVistaPrevia: React.FC<ModalVistaPreviaProps> = ({ isOpen, onClose, fo
 
     } catch (error) {
       console.error(error);
-      toast.error("Error al fusionar PDFs.");
+      toast.error(t("toastMergeError"));
     } finally {
       setIsMerging(false);
     }
@@ -478,10 +481,10 @@ const ModalVistaPrevia: React.FC<ModalVistaPreviaProps> = ({ isOpen, onClose, fo
       <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-7xl h-[90vh] flex flex-row overflow-hidden border border-gray-200 dark:border-zinc-800">
         <div className="flex-1 flex flex-col border-r border-gray-200 dark:border-zinc-800">
           <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-zinc-800">
-            <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Vista Previa</h2>
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-white">{t("previewTitle")}</h2>
             <div className="flex items-center gap-3">
               <button onClick={handleDownloadMerged} disabled={isMerging} className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all disabled:opacity-50">
-                {isMerging ? "Generando PDF..." : <><Download size={18} /> {reporteTecnico ? "Descargar Cotización + Reporte" : "Descargar PDF"}</>}
+                {isMerging ? t("btnGenerating") : <><Download size={18} /> {reporteTecnico ? t("btnDownloadMerge") : t("btnDownload")}</>}
               </button>
               <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg text-gray-500 dark:text-gray-400"><X size={24} /></button>
             </div>
@@ -494,7 +497,7 @@ const ModalVistaPrevia: React.FC<ModalVistaPreviaProps> = ({ isOpen, onClose, fo
         </div>
         <div className="w-1/3 bg-gray-50 dark:bg-zinc-950 p-6 flex flex-col overflow-y-auto gap-8 border-l border-gray-200 dark:border-zinc-800">
           <div className="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-gray-200 dark:border-zinc-800 shadow-sm">
-            <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 flex items-center gap-2 mb-3"><Paperclip size={16} className="text-blue-600 dark:text-blue-400" /> Anexar Reporte Técnico (TSR)</h3>
+            <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 flex items-center gap-2 mb-3"><Paperclip size={16} className="text-blue-600 dark:text-blue-400" /> {t("attachReport")}</h3>
             <div {...getRootProps()} className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${isDragActive ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-300 dark:border-zinc-700 hover:border-blue-400 dark:hover:border-blue-500'}`}>
               <input {...getInputProps()} />
               {reporteTecnico ? (
@@ -502,21 +505,21 @@ const ModalVistaPrevia: React.FC<ModalVistaPreviaProps> = ({ isOpen, onClose, fo
                   <FileCheck size={20} /><span className="text-sm truncate max-w-[200px]">{reporteTecnico.name}</span>
                   <button onClick={(e) => { e.stopPropagation(); setReporteTecnico(null); }} className="ml-2 p-1 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-500 dark:text-red-400 rounded-full"><X size={14} /></button>
                 </div>
-              ) : (<div className="text-gray-500 dark:text-gray-400 text-xs"><p className="mb-1">Arrastra tu PDF aquí</p><span className="text-blue-500 dark:text-blue-400 underline">o haz clic para buscar</span></div>)}
+              ) : (<div className="text-gray-500 dark:text-gray-400 text-xs"><p className="mb-1">{t("dragDrop")}</p><span className="text-blue-500 dark:text-blue-400 underline">{t("clickToBrowse")}</span></div>)}
             </div>
-            <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-2 text-center">Se unirá automáticamente al final de la cotización al descargar.</p>
+            <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-2 text-center">{t("mergeNote")}</p>
           </div>
           <div>
-            <h3 className="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2 mb-2"><Sparkles className="text-purple-600 dark:text-purple-400" /> Asistente de Envío</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Genera un correo profesional para acompañar este PDF.</p>
+            <h3 className="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2 mb-2"><Sparkles className="text-purple-600 dark:text-purple-400" /> {t("aiAssistant")}</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{t("aiAssistantDesc")}</p>
             <button onClick={generarCorreo} disabled={generandoCorreo} className="w-full py-3 bg-purple-600 dark:bg-purple-700 text-white rounded-xl font-semibold flex justify-center items-center gap-2 hover:bg-purple-700 dark:hover:bg-purple-600 transition-all disabled:opacity-50">
-              {generandoCorreo ? <span className="animate-pulse">Redactando...</span> : <><Mail size={18} /> Generar Correo con IA</>}
+              {generandoCorreo ? <span className="animate-pulse">{t("btnAiDrafting")}</span> : <><Mail size={18} /> {t("btnAiMail")}</>}
             </button>
             {correoGenerado && (
               <div className="mt-4 flex-1 flex flex-col animate-fadeIn">
-                <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Borrador sugerido:</label>
+                <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">{t("aiDraftSuggested")}</label>
                 <textarea className="w-full h-48 p-4 border border-gray-200 dark:border-zinc-700 rounded-xl text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-zinc-800 leading-relaxed focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none" value={correoGenerado} readOnly />
-                <button onClick={() => copiarAlPortapapeles(correoGenerado)} className="mt-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg text-gray-600 dark:text-gray-300 font-medium hover:bg-white dark:hover:bg-zinc-800 flex justify-center items-center gap-2 transition-colors"><Copy size={16} /> Copiar Texto</button>
+                <button onClick={() => copiarAlPortapapeles(correoGenerado)} className="mt-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg text-gray-600 dark:text-gray-300 font-medium hover:bg-white dark:hover:bg-zinc-800 flex justify-center items-center gap-2 transition-colors"><Copy size={16} /> {t("btnCopyText")}</button>
               </div>
             )}
           </div>
@@ -529,6 +532,8 @@ const ModalVistaPrevia: React.FC<ModalVistaPreviaProps> = ({ isOpen, onClose, fo
 /* ===================== Componente principal ===================== */
 
 const NuevaCotizacionPage: React.FC = () => {
+  const t = useTranslations("NuevaCotizacion");
+
   const [clientesDisponibles, setClientesDisponibles] = useState<ClientePredefinido[]>([]);
   const [usuariosRegistrados, setUsuariosRegistrados] = useState<UsuarioRegistrado[]>([]);
   const [tarifasDisponibles, setTarifasDisponibles] = useState<Tarifa[]>([]);
@@ -659,15 +664,15 @@ const NuevaCotizacionPage: React.FC = () => {
       if (data.data && data.data.id) {
         const nuevoFolio = `SIG-${data.data.id}`;
         setFolioGenerado(nuevoFolio);
-        toast.success(`Cotización guardada exitosamente. Folio asignado: ${nuevoFolio}`);
+        toast.success(t("toastSaveSuccess", { folio: nuevoFolio }));
       } else {
-        toast.success("Cotización guardada.");
+        toast.success(t("toastSaveBasic"));
       }
 
     } catch (error: any) {
       console.error('Error:', error)
       const mensajeError = error.response?.data?.message || error.message || 'Error desconocido';
-      toast.error('Error al guardar la cotización', { description: mensajeError });
+      toast.error(t("toastSaveError"), { description: mensajeError });
     } finally {
       setLoading(false)
     }

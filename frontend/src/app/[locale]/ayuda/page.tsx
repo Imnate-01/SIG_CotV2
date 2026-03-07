@@ -12,8 +12,10 @@ import {
   Info
 } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 
 export default function AyudaPage() {
+  const t = useTranslations("Ayuda");
   // Estado para controlar qué pregunta del FAQ está abierta
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
@@ -23,20 +25,20 @@ export default function AyudaPage() {
 
   const faqs = [
     {
-      pregunta: "¿Cómo se generan los números de folio (SIG)?",
-      respuesta: "Hemos simplificado el proceso. Ahora todas las cotizaciones, sin importar si son por Tiempo y Materiales (ST) o Servicios Mensuales (SM), se generan automáticamente con el prefijo único 'SIG' seguido de un número consecutivo (ej. SIG-1024) para facilitar el seguimiento."
+      pregunta: t("faq1q"),
+      respuesta: t("faq1a")
     },
     {
-      pregunta: "¿Puedo editar una cotización ya enviada?",
-      respuesta: "Si la cotización está en estado 'Borrador', puedes editarla libremente. Si ya fue marcada como 'Aceptada' o 'Rechazada', el sistema bloquea la edición para proteger el historial. En ese caso, te recomendamos crear una nueva."
+      pregunta: t("faq2q"),
+      respuesta: t("faq2a")
     },
     {
-      pregunta: "¿Qué hago si no encuentro un cliente en el buscador?",
-      respuesta: "Puedes agregarlo directamente desde la pantalla de 'Nueva Cotización'. En el desplegable de clientes, selecciona la opción '➕ Agregar nuevo cliente' al final de la lista e ingresa sus datos fiscales."
+      pregunta: t("faq3q"),
+      respuesta: t("faq3a")
     },
     {
-      pregunta: "¿Cómo registro una Orden de Compra (PO)?",
-      respuesta: "Ingresa al detalle de la cotización (icono de ojo). Si cambias el estado a 'Aceptada' (Ganada), se desplegará un panel verde donde podrás capturar el número de PO y actualizar su estatus administrativo."
+      pregunta: t("faq4q"),
+      respuesta: t("faq4a")
     }
   ];
 
@@ -48,10 +50,10 @@ export default function AyudaPage() {
         <div className="mb-10 text-center md:text-left">
           <h1 className="text-3xl font-bold text-slate-800 dark:text-white flex items-center gap-3 justify-center md:justify-start">
             <HelpCircle className="text-blue-600 dark:text-blue-500" size={32} />
-            Centro de Ayuda
+            {t("title")}
           </h1>
           <p className="text-slate-500 dark:text-gray-400 mt-2 text-lg">
-            Resuelve tus dudas y encuentra soporte para el Sistema de Cotizaciones SIG.
+            {t("subtitle")}
           </p>
         </div>
 
@@ -59,7 +61,7 @@ export default function AyudaPage() {
 
           {/* Columna Izquierda: FAQ */}
           <div className="lg:col-span-2 space-y-6">
-            <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-4">Preguntas Frecuentes</h2>
+            <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-4">{t("faqsTitle")}</h2>
 
             <div className="space-y-4">
               {faqs.map((faq, index) => (
@@ -94,14 +96,14 @@ export default function AyudaPage() {
 
             {/* Sección de Recursos / Documentación */}
             <div className="mt-10">
-              <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-4">Documentación</h2>
+              <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-4">{t("docsTitle")}</h2>
               <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow cursor-pointer group">
                 <div className="bg-orange-100 dark:bg-orange-900/30 p-3 rounded-lg text-orange-600 dark:text-orange-400 group-hover:scale-110 transition-transform">
                   <FileText size={24} />
                 </div>
                 <div>
-                  <h3 className="font-bold text-slate-800 dark:text-white">Manual de Operación v2.1</h3>
-                  <p className="text-sm text-slate-500 dark:text-gray-400">Guía sobre el nuevo flujo de cotizaciones SIG y facturación.</p>
+                  <h3 className="font-bold text-slate-800 dark:text-white">{t("docsItemTitle")}</h3>
+                  <p className="text-sm text-slate-500 dark:text-gray-400">{t("docsItemDesc")}</p>
                 </div>
               </div>
             </div>
@@ -111,9 +113,9 @@ export default function AyudaPage() {
           <div className="lg:col-span-1 space-y-6">
             <div className="bg-blue-600 dark:bg-blue-700 text-white p-6 rounded-2xl shadow-lg relative overflow-hidden">
               <div className="relative z-10">
-                <h3 className="text-xl font-bold mb-2">¿Necesitas soporte?</h3>
+                <h3 className="text-xl font-bold mb-2">{t("supportTitle")}</h3>
                 <p className="text-blue-100 dark:text-blue-200 text-sm mb-6">
-                  Nuestro equipo técnico está disponible de Lunes a Viernes, de 9:00 a 18:00 hrs.
+                  {t("supportDesc")}
                 </p>
 
                 <div className="space-y-4">
@@ -123,7 +125,7 @@ export default function AyudaPage() {
                   </a>
                   <div className="flex items-center gap-3 bg-white/10 p-3 rounded-lg hover:bg-white/20 transition-colors cursor-pointer">
                     <Phone size={20} />
-                    <span className="font-medium">Ext. 5678 (Interna)</span>
+                    <span className="font-medium">{t("internalExtension")}</span>
                   </div>
                 </div>
               </div>
@@ -138,15 +140,15 @@ export default function AyudaPage() {
               <div className="mx-auto w-12 h-12 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center mb-4">
                 <MessageCircle size={24} />
               </div>
-              <h3 className="font-bold text-slate-800 dark:text-white">Reportar un Bug</h3>
+              <h3 className="font-bold text-slate-800 dark:text-white">{t("reportBugTitle")}</h3>
               <p className="text-slate-500 dark:text-gray-400 text-xs mt-2 mb-4">
-                Si encuentras un error en el sistema, por favor notifícalo al equipo de desarrollo.
+                {t("reportBugDesc")}
               </p>
               <button
                 className="w-full py-2 px-4 border border-green-600 dark:border-green-500 text-green-700 dark:text-green-400 font-semibold rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors text-sm"
-                onClick={() => toast.info("Función de reporte directo en desarrollo", { description: "Por favor envía un correo." })}
+                onClick={() => toast.info(t("devToastTitle"), { description: t("devToastDesc") })}
               >
-                Enviar Reporte
+                {t("reportBugBtn")}
               </button>
             </div>
           </div>

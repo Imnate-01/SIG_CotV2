@@ -14,6 +14,7 @@ import {
   ArrowRight,
   MoreHorizontal
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 type ReportRow = {
   id: number;
@@ -28,17 +29,15 @@ type ReportRow = {
   fecha_fin: string | null;
 };
 
-// Helper para fechas
 function formatDate(d?: string | null) {
   if (!d) return "—";
-  return new Date(d).toLocaleDateString("es-MX", {
+  return new Date(d).toLocaleDateString("es-MX", { // TODO: Adapt to locale in future if needed
     year: "numeric",
     month: "short",
     day: "2-digit",
   });
 }
 
-// Helper para obtener iniciales (Avatar)
 function getInitials(name: string | null) {
   if (!name) return "??";
   return name
@@ -50,6 +49,8 @@ function getInitials(name: string | null) {
 }
 
 export default function ReportesTecnicosListadoPage() {
+  const t = useTranslations("ReportesTec");
+
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<ReportRow[]>([]);
   const [q, setQ] = useState("");
@@ -62,7 +63,6 @@ export default function ReportesTecnicosListadoPage() {
         setRows(res.data.data || []);
       } catch (e) {
         console.error(e);
-        // Podrías usar un toast aquí en lugar de alert
       } finally {
         setLoading(false);
       }
@@ -95,32 +95,29 @@ export default function ReportesTecnicosListadoPage() {
     <div className="min-h-screen bg-slate-50/50 dark:bg-zinc-950 p-6 md:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
 
-        {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Reportes Técnicos</h1>
-            <p className="text-slate-500 dark:text-gray-400 mt-1">Gestiona y consulta el historial de inspecciones.</p>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">{t("title")}</h1>
+            <p className="text-slate-500 dark:text-gray-400 mt-1">{t("subtitle")}</p>
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Botón Nuevo con mejor estilo */}
             <Link
               href="/reportestec/nuevo"
               className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 dark:bg-blue-700 hover:bg-blue-700 dark:hover:bg-blue-600 text-white text-sm font-semibold rounded-xl shadow-sm shadow-blue-200 dark:shadow-none transition-all hover:-translate-y-0.5"
             >
               <Plus size={18} />
-              Crear Reporte
+              {t("newReport")}
             </Link>
           </div>
         </div>
 
-        {/* Filtros y Búsqueda */}
         <div className="bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between">
           <div className="relative w-full md:w-96">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-gray-500" size={18} />
             <input
               type="text"
-              placeholder="Buscar por folio, cliente, planta..."
+              placeholder={t("searchPlaceholder")}
               className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all placeholder:text-slate-400 dark:placeholder:text-gray-500"
               value={q}
               onChange={(e) => setQ(e.target.value)}
@@ -130,58 +127,55 @@ export default function ReportesTecnicosListadoPage() {
           <div className="flex items-center gap-2">
             <button className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-600 dark:text-gray-300 text-sm font-medium rounded-xl hover:bg-slate-50 dark:hover:bg-zinc-700 transition-colors">
               <Filter size={16} />
-              Filtros
+              {t("filters")}
             </button>
           </div>
         </div>
 
-        {/* Tabla */}
         <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm overflow-hidden">
           {loading ? (
             <div className="p-12 text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-slate-500 dark:text-gray-400 text-sm">Cargando reportes...</p>
+              <p className="text-slate-500 dark:text-gray-400 text-sm">{t("loading")}</p>
             </div>
           ) : filtered.length === 0 ? (
             <div className="p-16 text-center flex flex-col items-center">
               <div className="bg-slate-50 dark:bg-zinc-800 p-4 rounded-full mb-3">
                 <FileText className="text-slate-300 dark:text-gray-600" size={32} />
               </div>
-              <h3 className="text-slate-900 dark:text-white font-medium">No se encontraron reportes</h3>
-              <p className="text-slate-500 dark:text-gray-400 text-sm mt-1">Intenta con otros términos de búsqueda.</p>
+              <h3 className="text-slate-900 dark:text-white font-medium">{t("noResults")}</h3>
+              <p className="text-slate-500 dark:text-gray-400 text-sm mt-1">{t("noResultsDesc")}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left">
                 <thead className="bg-slate-50/50 dark:bg-zinc-900/50 border-b border-slate-200 dark:border-zinc-800">
                   <tr>
-                    <th className="px-6 py-4 font-semibold text-xs text-slate-500 dark:text-gray-400 uppercase tracking-wider">Folio</th>
-                    <th className="px-6 py-4 font-semibold text-xs text-slate-500 dark:text-gray-400 uppercase tracking-wider">Cliente / Planta</th>
-                    <th className="px-6 py-4 font-semibold text-xs text-slate-500 dark:text-gray-400 uppercase tracking-wider">Fechas</th>
-                    <th className="px-6 py-4 font-semibold text-xs text-slate-500 dark:text-gray-400 uppercase tracking-wider">Ingeniero</th>
-                    <th className="px-6 py-4 font-semibold text-xs text-slate-500 dark:text-gray-400 uppercase tracking-wider">Estado</th>
-                    <th className="px-6 py-4 font-semibold text-xs text-slate-500 dark:text-gray-400 uppercase tracking-wider text-right">Acciones</th>
+                    <th className="px-6 py-4 font-semibold text-xs text-slate-500 dark:text-gray-400 uppercase tracking-wider">{t("colFolio")}</th>
+                    <th className="px-6 py-4 font-semibold text-xs text-slate-500 dark:text-gray-400 uppercase tracking-wider">{t("colClient")}</th>
+                    <th className="px-6 py-4 font-semibold text-xs text-slate-500 dark:text-gray-400 uppercase tracking-wider">{t("colDates")}</th>
+                    <th className="px-6 py-4 font-semibold text-xs text-slate-500 dark:text-gray-400 uppercase tracking-wider">{t("colEngineer")}</th>
+                    <th className="px-6 py-4 font-semibold text-xs text-slate-500 dark:text-gray-400 uppercase tracking-wider">{t("colStatus")}</th>
+                    <th className="px-6 py-4 font-semibold text-xs text-slate-500 dark:text-gray-400 uppercase tracking-wider text-right">{t("colActions")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
                   {filtered.map((r) => (
                     <tr key={r.id} className="hover:bg-slate-50/80 dark:hover:bg-zinc-800/50 transition-colors group">
 
-                      {/* Folio */}
                       <td className="px-6 py-4">
                         <span className="font-mono font-medium text-slate-700 dark:text-gray-300 bg-slate-100 dark:bg-zinc-800 px-2 py-1 rounded-md text-xs">
                           {r.folio}
                         </span>
                       </td>
 
-                      {/* Cliente */}
                       <td className="px-6 py-4">
                         <div className="flex items-start gap-3">
                           <div className="mt-1 p-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg shrink-0">
                             <Building2 size={16} />
                           </div>
                           <div>
-                            <p className="font-semibold text-slate-900 dark:text-white">{r.cliente_nombre || "Sin nombre"}</p>
+                            <p className="font-semibold text-slate-900 dark:text-white">{r.cliente_nombre || t("noName")}</p>
                             <div className="flex items-center gap-1.5 text-slate-500 dark:text-gray-400 text-xs mt-0.5">
                               <span>{r.cliente_empresa}</span>
                               {r.planta && (
@@ -195,7 +189,6 @@ export default function ReportesTecnicosListadoPage() {
                         </div>
                       </td>
 
-                      {/* Fechas */}
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2 text-slate-600 dark:text-gray-300">
                           <CalendarDays size={14} className="text-slate-400 dark:text-gray-500" />
@@ -203,14 +196,13 @@ export default function ReportesTecnicosListadoPage() {
                             <span className="font-medium">{formatDate(r.created_at)}</span>
                             {(r.fecha_inicio || r.fecha_fin) && (
                               <span className="text-[10px] text-slate-400 dark:text-gray-500 uppercase tracking-wide">
-                                Servicio: {formatDate(r.fecha_inicio)}
+                                {t("service")}: {formatDate(r.fecha_inicio)}
                               </span>
                             )}
                           </div>
                         </div>
                       </td>
 
-                      {/* Ingeniero (Avatar) */}
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xs font-bold border border-indigo-200 dark:border-indigo-800">
@@ -222,29 +214,28 @@ export default function ReportesTecnicosListadoPage() {
                         </div>
                       </td>
 
-                      {/* Estado */}
                       <td className="px-6 py-4">
                         <span
                           className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${r.estado === "finalizado"
-                              ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800"
-                              : r.estado === "borrador"
-                                ? "bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800"
-                                : "bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-gray-400 border-slate-200 dark:border-zinc-700"
+                            ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800"
+                            : r.estado === "borrador"
+                              ? "bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800"
+                              : "bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-gray-400 border-slate-200 dark:border-zinc-700"
                             }`}
                         >
                           <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${r.estado === "finalizado" ? "bg-emerald-500" :
-                              r.estado === "borrador" ? "bg-amber-500" : "bg-slate-400"
+                            r.estado === "borrador" ? "bg-amber-500" : "bg-slate-400"
                             }`}></span>
-                          {r.estado.charAt(0).toUpperCase() + r.estado.slice(1)}
+                          {/* Traducción dinámica del status para UX, si requerida */}
+                          {r.estado === "finalizado" ? t("statusCompleted") : r.estado === "borrador" ? t("statusDraft") : r.estado.charAt(0).toUpperCase() + r.estado.slice(1)}
                         </span>
                       </td>
 
-                      {/* Acciones */}
                       <td className="px-6 py-4 text-right">
                         <Link
                           href={`/reportestec/${r.id}`}
                           className="inline-flex items-center justify-center w-8 h-8 text-slate-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-full transition-all"
-                          title="Ver detalles"
+                          title={t("viewDetails")}
                         >
                           <ArrowRight size={18} />
                         </Link>
@@ -256,10 +247,9 @@ export default function ReportesTecnicosListadoPage() {
             </div>
           )}
 
-          {/* Footer de tabla (Paginación simple o contador) */}
           <div className="px-6 py-4 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/30 dark:bg-zinc-900 flex items-center justify-between">
             <p className="text-xs text-slate-500 dark:text-gray-400">
-              Mostrando <span className="font-semibold text-slate-700 dark:text-gray-300">{filtered.length}</span> resultados
+              {t("showingOf", { count: filtered.length })}
             </p>
           </div>
         </div>
