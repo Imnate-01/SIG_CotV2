@@ -1,7 +1,9 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
+import { useRouter } from "@/i18n/routing";
+import { Link } from "@/i18n/routing";
+import { useTranslations } from "next-intl";
 import {
   LayoutDashboard,
   FilePlus,
@@ -12,52 +14,48 @@ import {
   BarChart3,
   Settings,
   HelpCircle,
-  Menu, // Icono de Hamburguesa
-  X,     // Icono de Cerrar
-  Wrench // Nuevo icono para servicio técnico
+  Menu,
+  X,
+  Wrench
 } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
-import { useAuthMigration } from "@/hooks/useAuthMigration"; // Importamos el hook de migración
+import { useAuthMigration } from "@/hooks/useAuthMigration";
+import LanguageSwitcher from "./LanguageSwitcher";
 
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const t = useTranslations("Sidebar");
 
-  // Estado para controlar si el menú móvil está abierto
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
-  // Hook de migración y obtención de datos
   const { userData, isMigrated } = useAuthMigration();
 
   const usuario = userData || {
     nombre: "Usuario",
-    email: "Cargando...",
+    email: "...",
     rol: "",
     departamento: ""
   };
 
-  // Cerrar el menú móvil automáticamente cuando cambiamos de página
   useEffect(() => {
     setIsMobileOpen(false);
   }, [pathname]);
 
   const handleLogout = () => {
     localStorage.removeItem("auth_token");
-    localStorage.removeItem("user_data"); // Remove user_data
-    localStorage.removeItem("user");      // Remove user (just in case)
-    localStorage.removeItem("onboarding_completed"); // Optional: reset onboarding
+    localStorage.removeItem("user_data");
+    localStorage.removeItem("user");
+    localStorage.removeItem("onboarding_completed");
     router.push("/login");
   };
 
-  // Helper para clases de link activo
   const linkClass = (path: string) =>
-    `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all font-medium text-sm ${pathname === path || pathname.startsWith(path + "/")
+    `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all font-medium text-sm ${pathname.includes(path)
       ? "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400"
       : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-zinc-800 dark:hover:text-gray-200"
     }`;
 
-  // --- LÓGICA DE ROLES ---
-  // Determinamos si es ingeniero basándonos en su rol o departamento
   const esIngeniero = usuario.rol === 'ingeniero' ||
     (usuario.departamento && (
       usuario.departamento.toLowerCase().includes('técnico') ||
@@ -66,7 +64,6 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* 1. BOTÓN DE MENÚ MÓVIL (Solo visible en pantallas pequeñas) */}
       <button
         onClick={() => setIsMobileOpen(true)}
         className="lg:hidden fixed top-4 left-4 z-40 p-2 bg-white border border-gray-200 rounded-lg shadow-sm text-gray-600 hover:bg-gray-50"
@@ -74,7 +71,6 @@ export default function Sidebar() {
         <Menu size={24} />
       </button>
 
-      {/* 2. OVERLAY OSCURO (Fondo negro semitransparente en móvil) */}
       {isMobileOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm transition-opacity"
@@ -82,7 +78,6 @@ export default function Sidebar() {
         />
       )}
 
-      {/* 3. EL SIDEBAR */}
       <aside
         className={`
           fixed top-0 left-0 h-screen w-64 bg-white dark:bg-zinc-900 border-r border-gray-200 dark:border-zinc-800 flex flex-col shadow-xl z-50 transition-transform duration-300 ease-in-out
@@ -90,18 +85,15 @@ export default function Sidebar() {
           lg:translate-x-0 lg:shadow-none
         `}
       >
-
         {/* HEADER */}
         <div className="p-6 border-b border-gray-100 dark:border-zinc-800 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            {/* Color distintivo según rol: Azul (Ventas) / Naranja (Técnico) */}
             <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold shadow-md ${esIngeniero ? 'bg-orange-500 shadow-orange-200' : 'bg-blue-600 shadow-blue-200'}`}>
               S
             </div>
             <span className="font-bold text-lg text-gray-800 dark:text-gray-200 tracking-tight">SIG System</span>
           </div>
           <ThemeToggle />
-          {/* Botón X para cerrar en móvil */}
           <button
             onClick={() => setIsMobileOpen(false)}
             className="lg:hidden text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
@@ -117,79 +109,79 @@ export default function Sidebar() {
           {!esIngeniero && (
             <>
               <div>
-                <p className="px-3 text-[11px] font-extrabold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-2">Comercial</p>
+                <p className="px-3 text-[11px] font-extrabold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-2">{t("commercial")}</p>
                 <div className="space-y-1">
                   <Link href="/cotizaciones" className={linkClass("/cotizaciones")}>
                     <LayoutDashboard size={18} />
-                    Tablero Principal
+                    {t("dashboard")}
                   </Link>
                   <Link href="/cotizaciones/nueva" className={linkClass("/cotizaciones/nueva")}>
                     <FilePlus size={18} />
-                    Nueva Cotización
+                    {t("newQuotation")}
                   </Link>
                 </div>
               </div>
 
               <div>
-                <p className="px-3 text-[11px] font-extrabold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-2">Gestión</p>
+                <p className="px-3 text-[11px] font-extrabold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-2">{t("management")}</p>
                 <div className="space-y-1">
                   <Link href="/clientes" className={linkClass("/clientes")}>
                     <Users size={18} />
-                    Clientes
+                    {t("clients")}
                   </Link>
                   <Link href="/servicios" className={linkClass("/servicios")}>
                     <Tags size={18} />
-                    Tarifas y Servicios
+                    {t("ratesAndServices")}
                   </Link>
                 </div>
               </div>
             </>
           )}
 
-          {/* --- SECCIÓN DE REPORTES TÉCNICOS (Visible para todos, pero prioritaria para Ingenieros) --- */}
+          {/* --- SECCIÓN DE REPORTES TÉCNICOS --- */}
           <div>
-            <p className="px-3 text-[11px] font-extrabold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-2">Servicio Técnico</p>
+            <p className="px-3 text-[11px] font-extrabold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-2">{t("technicalService")}</p>
             <div className="space-y-1">
               <Link href="/reportestec" className={linkClass("/reportestec")}>
                 <Wrench size={18} />
-                {esIngeniero ? "Mis Reportes" : "Reportes Técnicos"}
+                {esIngeniero ? t("myReports") : t("technicalReports")}
               </Link>
 
-              {/* Acceso directo a crear reporte (Esencial para ingenieros) */}
               {esIngeniero && (
                 <Link href="/reportestec/nuevo" className={linkClass("/reportestec/nuevo")}>
                   <FilePlus size={18} />
-                  Nuevo Reporte
+                  {t("newReport")}
                 </Link>
               )}
 
-              {/* Si es ventas, también ve métricas aquí, el inge no */}
               {!esIngeniero && (
                 <Link href="/reportes" className={linkClass("/reportes")}>
                   <BarChart3 size={18} />
-                  Métricas de Ventas
+                  {t("salesMetrics")}
                 </Link>
               )}
             </div>
           </div>
 
-          {/* --- SECCIÓN SISTEMA (Común) --- */}
+          {/* --- SECCIÓN SISTEMA --- */}
           <div>
-            <p className="px-3 text-[11px] font-extrabold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-2">Sistema</p>
+            <p className="px-3 text-[11px] font-extrabold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-2">{t("system")}</p>
             <div className="space-y-1">
-              {/* Configuración solo para Admins/Ventas */}
               {!esIngeniero && (
                 <Link href="/configuracion" className={linkClass("/configuracion")}>
                   <Settings size={18} />
-                  Configuración
+                  {t("settings")}
                 </Link>
               )}
               <Link href="/ayuda" className={linkClass("/ayuda")}>
                 <HelpCircle size={18} />
-                Ayuda y Soporte
+                {t("helpAndSupport")}
               </Link>
             </div>
           </div>
+
+          {/* --- SELECTOR DE IDIOMA --- */}
+          <LanguageSwitcher />
 
         </nav>
 
@@ -204,15 +196,14 @@ export default function Sidebar() {
                 {usuario.nombre}
               </p>
               <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate font-mono">
-                {/* Mostramos el rol de forma amigable */}
-                {esIngeniero ? "Ingeniero de Campo" : (usuario.rol || "Usuario")}
+                {esIngeniero ? t("fieldEngineer") : (usuario.rol || t("user"))}
               </p>
             </div>
           </div>
 
           <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 text-gray-600 dark:text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 py-2 rounded-lg transition-all text-xs font-bold uppercase border border-gray-200 dark:border-zinc-700 hover:border-red-100 dark:hover:border-red-900 bg-white dark:bg-zinc-800">
             <LogOut size={14} />
-            Cerrar Sesión
+            {t("logout")}
           </button>
         </div>
       </aside>

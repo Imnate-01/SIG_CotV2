@@ -1,0 +1,94 @@
+﻿
+> frontend@0.1.0 build
+> next build
+
+Ôû▓ Next.js 16.1.1 (Turbopack)
+- Environments: .env.local
+
+node.exe : ÔÜá The 
+"middleware" file 
+convention is 
+deprecated. Please use 
+"proxy" instead. Learn 
+more: https://nextjs.or
+g/docs/messages/middlew
+are-to-proxy
+En línea: 1 Carácter: 1
++ & "C:\Program 
+Files\nodejs/node.exe" 
+"C:\Program 
+Files\nodejs/node_mo 
+...
++ ~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+~~
+    + CategoryInfo     
+         : NotSpecifi  
+  ed: (ÔÜá The "midd   
+ le...leware-to-pro    
+xy:String) [], Rem    
+oteException
+    + FullyQualifiedEr 
+   rorId : NativeComm  
+  andError
+ 
+  Creating an optimized production build ...
+Ô£ô Compiled successfully in 5.5s
+  Running TypeScript ...
+  Collecting page data using 11 workers ...
+  Generating static pages using 11 workers (0/27) ...
+  Generating static pages using 11 workers (6/27) 
+  Generating static pages using 11 workers (13/27) 
+  Generating static pages using 11 workers (20/27) 
+Ô£ô Generating static pages using 11 workers (27/27) in 776.0ms
+  Finalizing page optimization ...
+
+Route (app)
+Ôöî Ôùï /_not-found
+Ôö£ ÔùÅ /[locale]
+Ôöé Ôö£ /es
+Ôöé Ôöö /en
+Ôö£ ÔùÅ /[locale]/ayuda
+Ôöé Ôö£ /es/ayuda
+Ôöé Ôöö /en/ayuda
+Ôö£ ÔùÅ /[locale]/clientes
+Ôöé Ôö£ /es/clientes
+Ôöé Ôöö /en/clientes
+Ôö£ ÔùÅ /[locale]/configuracion
+Ôöé Ôö£ /es/configuracion
+Ôöé Ôöö /en/configuracion
+Ôö£ ÔùÅ /[locale]/cotizaciones
+Ôöé Ôö£ /es/cotizaciones
+Ôöé Ôöö /en/cotizaciones
+Ôö£ ãÆ /[locale]/cotizaciones/[id]
+Ôö£ ãÆ /[locale]/cotizaciones/editar/[id]
+Ôö£ ÔùÅ /[locale]/cotizaciones/nueva
+Ôöé Ôö£ /es/cotizaciones/nueva
+Ôöé Ôöö /en/cotizaciones/nueva
+Ôö£ ÔùÅ /[locale]/login
+Ôöé Ôö£ /es/login
+Ôöé Ôöö /en/login
+Ôö£ ÔùÅ /[locale]/register
+Ôöé Ôö£ /es/register
+Ôöé Ôöö /en/register
+Ôö£ ÔùÅ /[locale]/reportes
+Ôöé Ôö£ /es/reportes
+Ôöé Ôöö /en/reportes
+Ôö£ ÔùÅ /[locale]/reportestec
+Ôöé Ôö£ /es/reportestec
+Ôöé Ôöö /en/reportestec
+Ôö£ ÔùÅ /[locale]/reportestec/nuevo
+Ôöé Ôö£ /es/reportestec/nuevo
+Ôöé Ôöö /en/reportestec/nuevo
+Ôöö ÔùÅ /[locale]/servicios
+  Ôö£ /es/servicios
+  Ôöö /en/servicios
+
+
+ãÆ Proxy (Middleware)
+
+Ôùï  (Static)   prerendered as static content
+ÔùÅ  (SSG)      prerendered as static HTML (uses generateStaticParams)
+ãÆ  (Dynamic)  server-rendered on demand
+

@@ -8,9 +8,11 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   const pathname = usePathname();
 
   // Rutas públicas donde NO debe salir ni el Menú ni el Onboarding
-  // (Login, Registro y la Landing Page "/")
-  const rutasFullPage = ["/login", "/register", "/"];
-  const esFullPage = rutasFullPage.includes(pathname);
+  // Soporta rutas con locale prefix: /en/login, /es/register, etc.
+  const esFullPage = pathname === "/" ||
+    pathname.endsWith("/login") ||
+    pathname.endsWith("/register") ||
+    pathname.match(/^\/(en|es)$/) !== null;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-zinc-950 font-sans text-gray-900 dark:text-gray-100">

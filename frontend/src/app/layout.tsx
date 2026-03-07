@@ -1,11 +1,9 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google"; // Usamos Inter, la fuente estándar moderna
+import { Inter } from "next/font/google";
 import "./globals.css";
-import ClientLayout from "@/components/ClientLayout"; // Importamos nuestro nuevo Wrapper
 import { ThemeProvider } from "@/components/ThemeProvider";
-import { Toaster } from "sonner"; // Importamos el Toaster
+import { Toaster } from "sonner";
 
-// Cargamos la fuente
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
@@ -19,14 +17,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es">
+    <html suppressHydrationWarning>
       <body className={inter.className}>
         <ThemeProvider defaultTheme="system">
-          {/* Envolvemos todo con nuestro ClientLayout */}
-          <ClientLayout>
-            {children}
-          </ClientLayout>
-          {/* Componente Toaster para notificaciones */}
+          {children}
           <Toaster position="top-right" richColors closeButton />
         </ThemeProvider>
       </body>

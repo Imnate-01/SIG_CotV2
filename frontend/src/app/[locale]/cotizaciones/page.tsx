@@ -2,8 +2,9 @@
 import React, { useEffect, useState } from "react";
 import api from "@/services/api";
 import { Eye, Search, Filter, X, Calendar, Download, LayoutGrid, List } from "lucide-react";
-import Link from "next/link";
-import { exportToExcel } from "../../utils/exportCotizaciones";
+import { Link } from "@/i18n/routing";
+import { useTranslations } from "next-intl";
+import { exportToExcel } from "../../../utils/exportCotizaciones";
 import { KanbanBoard } from "./components/KanbanBoard";
 import { Cotizacion } from "./components/KanbanCard";
 import { toast } from "sonner";
@@ -13,11 +14,11 @@ export default function DashboardCotizaciones() {
   const [cotizaciones, setCotizaciones] = useState<Cotizacion[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
+  const t = useTranslations("Cotizaciones");
 
   useRealtimeNotifications();
 
-  // --- ESTADOS PARA FILTROS ---
-  const [busqueda, setBusqueda] = useState(""); // Filtra por Folio o Cliente
+  const [busqueda, setBusqueda] = useState("");
   const [fechaInicio, setFechaInicio] = useState("");
   const [fechaFin, setFechaFin] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("todos");
@@ -36,35 +37,26 @@ export default function DashboardCotizaciones() {
     cargarDatos();
   }, []);
 
-  // --- LÓGICA DE FILTRADO ---
   const cotizacionesFiltradas = cotizaciones.filter((cot) => {
-    // 1. Filtro por Texto (Cliente o Folio)
     const texto = busqueda.toLowerCase();
     const coincideTexto =
       cot.numero_cotizacion.toLowerCase().includes(texto) ||
       (cot.clientes?.nombre || "").toLowerCase().includes(texto) ||
       (cot.clientes?.empresa || "").toLowerCase().includes(texto) ||
-      (cot.descripcion || "").toLowerCase().includes(texto); // Filtro por descripción
-
-    // 2. Filtro por Estado
+      (cot.descripcion || "").toLowerCase().includes(texto);
     const coincideEstado = filtroEstado === "todos" || cot.estado === filtroEstado;
-
-    // 3. Filtro por Fechas
     let coincideFecha = true;
     if (fechaInicio) {
       coincideFecha = coincideFecha && new Date(cot.fecha_creacion) >= new Date(fechaInicio);
     }
     if (fechaFin) {
-      // Ajustamos fecha fin para que incluya todo el día seleccionado
       const fin = new Date(fechaFin);
       fin.setHours(23, 59, 59);
       coincideFecha = coincideFecha && new Date(cot.fecha_creacion) <= fin;
     }
-
     return coincideTexto && coincideEstado && coincideFecha;
   });
 
-  // Limpiar filtros
   const limpiarFiltros = () => {
     setBusqueda("");
     setFechaInicio("");
@@ -74,15 +66,14 @@ export default function DashboardCotizaciones() {
 
   const handleExportar = async () => {
     if (cotizacionesFiltradas.length === 0) {
-      return toast.warning("Sin datos", { description: "No hay cotizaciones para exportar con los filtros actuales." });
+      return toast.warning(t("exportNoData"), { description: t("exportNoDataDesc") });
     }
-
     try {
       await exportToExcel(cotizacionesFiltradas);
-      toast.success("Excel Exportado", { description: `Se exportaron ${cotizacionesFiltradas.length} cotizaciones correctamente.` });
+      toast.success(t("exportSuccess"), { description: t("exportSuccessDesc", { count: cotizacionesFiltradas.length }) });
     } catch (error) {
       console.error(error);
-      toast.error("Error", { description: "Error al exportar el archivo." });
+      toast.error(t("exportError"), { description: t("exportErrorDesc") });
     }
   };
 
@@ -101,23 +92,22 @@ export default function DashboardCotizaciones() {
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Mis Cotizaciones</h1>
-            <p className="text-gray-500 dark:text-gray-400">Historial completo y herramientas de filtrado</p>
+            <h1 className="text-3xl font-bold text-gray-800 dark:text-white">{t("title")}</h1>
+            <p className="text-gray-500 dark:text-gray-400">{t("subtitle")}</p>
           </div>
           <div className="flex items-center gap-3">
-            {/* Toggle View Buttons */}
             <div className="flex bg-white dark:bg-zinc-800 p-1 rounded-xl border border-gray-200 dark:border-zinc-700 mr-2">
               <button
                 onClick={() => setViewMode('list')}
                 className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-400' : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'}`}
-                title="Vista de Lista"
+                title={t("listView")}
               >
                 <List size={20} />
               </button>
               <button
                 onClick={() => setViewMode('kanban')}
                 className={`p-2 rounded-lg transition-all ${viewMode === 'kanban' ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-400' : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'}`}
-                title="Tablero Kanban"
+                title={t("kanbanView")}
               >
                 <LayoutGrid size={20} />
               </button>
@@ -129,13 +119,13 @@ export default function DashboardCotizaciones() {
               disabled={loading || cotizacionesFiltradas.length === 0}
             >
               <Download size={20} />
-              Exportar Excel
+              {t("exportExcel")}
             </button>
             <Link
               href="/cotizaciones/nueva"
               className="bg-blue-600 dark:bg-blue-700 text-white px-5 py-2.5 rounded-xl hover:bg-blue-700 dark:hover:bg-blue-600 transition-all flex items-center gap-2 shadow-md hover:shadow-lg"
             >
-              + Nueva Cotización
+              {t("newQuotation")}
             </Link>
           </div>
         </div>
@@ -144,14 +134,13 @@ export default function DashboardCotizaciones() {
         <div className="bg-white dark:bg-zinc-900 p-5 rounded-2xl shadow-sm border border-gray-200 dark:border-zinc-800 mb-6">
           <div className="flex flex-col md:flex-row gap-4 items-end">
 
-            {/* Buscador Texto */}
             <div className="flex-1 w-full">
-              <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 block">Buscar</label>
+              <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 block">{t("searchLabel")}</label>
               <div className="relative">
                 <Search className="absolute left-3 top-3 text-gray-400 dark:text-gray-500" size={18} />
                 <input
                   type="text"
-                  placeholder="Cliente, Empresa o Folio..."
+                  placeholder={t("searchPlaceholder")}
                   value={busqueda}
                   onChange={(e) => setBusqueda(e.target.value)}
                   className="w-full pl-10 pr-4 py-2.5 border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-gray-700 dark:text-gray-200 dark:placeholder-gray-500"
@@ -159,25 +148,23 @@ export default function DashboardCotizaciones() {
               </div>
             </div>
 
-            {/* Filtro Estado */}
             <div className="w-full md:w-40">
-              <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 block">Estado</label>
+              <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 block">{t("statusLabel")}</label>
               <select
                 value={filtroEstado}
                 onChange={(e) => setFiltroEstado(e.target.value)}
                 className="w-full px-3 py-2.5 border border-gray-200 dark:border-zinc-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-zinc-800 text-gray-700 dark:text-gray-200"
               >
-                <option value="todos">Todos</option>
-                <option value="borrador">Borrador</option>
-                <option value="aceptada">Aceptada</option>
-                <option value="rechazada">Rechazada</option>
+                <option value="todos">{t("statusAll")}</option>
+                <option value="borrador">{t("statusDraft")}</option>
+                <option value="aceptada">{t("statusAccepted")}</option>
+                <option value="rechazada">{t("statusRejected")}</option>
               </select>
             </div>
 
-            {/* Filtro Fechas */}
             <div className="w-full md:w-auto flex gap-2">
               <div>
-                <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 block">Desde</label>
+                <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 block">{t("dateFrom")}</label>
                 <input
                   type="date"
                   value={fechaInicio}
@@ -186,7 +173,7 @@ export default function DashboardCotizaciones() {
                 />
               </div>
               <div>
-                <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 block">Hasta</label>
+                <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 block">{t("dateTo")}</label>
                 <input
                   type="date"
                   value={fechaFin}
@@ -196,39 +183,38 @@ export default function DashboardCotizaciones() {
               </div>
             </div>
 
-            {/* Botón Limpiar */}
             {(busqueda || fechaInicio || fechaFin || filtroEstado !== "todos") && (
               <button
                 onClick={limpiarFiltros}
                 className="px-4 py-2.5 text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-xl transition-colors flex items-center gap-2 text-sm font-medium"
               >
-                <X size={18} /> Limpiar
+                <X size={18} /> {t("clear")}
               </button>
             )}
           </div>
         </div>
 
-        {/* --- VISTAS: TABLA O KANBAN --- */}
+        {/* --- VISTAS --- */}
         {viewMode === 'list' ? (
           <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-gray-200 dark:border-zinc-800 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm text-gray-600 dark:text-gray-400">
                 <thead className="bg-gray-50 dark:bg-zinc-950 text-gray-700 dark:text-gray-200 font-semibold uppercase text-xs border-b border-gray-200 dark:border-zinc-800">
                   <tr>
-                    <th className="px-6 py-4">Folio</th>
-                    <th className="px-6 py-4">Cliente</th>
-                    <th className="px-6 py-4">Creado por</th>
-                    <th className="px-6 py-4">Fecha</th>
-                    <th className="px-6 py-4">Estado</th>
-                    <th className="px-6 py-4">PO Status</th>
-                    <th className="px-6 py-4 text-center">Acción</th>
+                    <th className="px-6 py-4">{t("tableId")}</th>
+                    <th className="px-6 py-4">{t("tableClient")}</th>
+                    <th className="px-6 py-4">{t("tableCreatedBy")}</th>
+                    <th className="px-6 py-4">{t("tableDate")}</th>
+                    <th className="px-6 py-4">{t("tableStatus")}</th>
+                    <th className="px-6 py-4">{t("tablePO")}</th>
+                    <th className="px-6 py-4 text-center">{t("tableAction")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-zinc-800">
                   {loading ? (
-                    <tr><td colSpan={7} className="text-center py-10 dark:text-gray-400">Cargando cotizaciones...</td></tr>
+                    <tr><td colSpan={7} className="text-center py-10 dark:text-gray-400">{t("loadingQuotations")}</td></tr>
                   ) : cotizacionesFiltradas.length === 0 ? (
-                    <tr><td colSpan={7} className="text-center py-10 text-gray-400 dark:text-gray-500">No se encontraron resultados con estos filtros.</td></tr>
+                    <tr><td colSpan={7} className="text-center py-10 text-gray-400 dark:text-gray-500">{t("noResultsFilters")}</td></tr>
                   ) : (
                     cotizacionesFiltradas.map((cot) => (
                       <tr key={cot.id} className="hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors group">
@@ -244,12 +230,8 @@ export default function DashboardCotizaciones() {
                             </div>
                           )}
                         </td>
-                        <td className="px-6 py-4">
-                          {cot.creado_por_nombre}
-                        </td>
-                        <td className="px-6 py-4">
-                          {new Date(cot.fecha_creacion).toLocaleDateString()}
-                        </td>
+                        <td className="px-6 py-4">{cot.creado_por_nombre}</td>
+                        <td className="px-6 py-4">{new Date(cot.fecha_creacion).toLocaleDateString()}</td>
                         <td className="px-6 py-4">
                           <span className={`px-3 py-1 rounded-full text-xs font-bold shadow-sm ${getEstadoColor(cot.estado)}`}>
                             {cot.estado.toUpperCase()}
@@ -258,8 +240,8 @@ export default function DashboardCotizaciones() {
                         <td className="px-6 py-4">
                           {cot.estado === 'aceptada' ? (
                             cot.estatus_po === 'completada'
-                              ? <span className="text-green-600 dark:text-green-400 font-bold flex items-center gap-1 text-xs bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded border border-green-100 dark:border-green-900/30">✔ Completada</span>
-                              : <span className="text-orange-500 dark:text-orange-400 font-bold flex items-center gap-1 text-xs bg-orange-50 dark:bg-orange-900/20 px-2 py-1 rounded border border-orange-100 dark:border-orange-900/30">⏳ Pendiente</span>
+                              ? <span className="text-green-600 dark:text-green-400 font-bold flex items-center gap-1 text-xs bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded border border-green-100 dark:border-green-900/30">✔ {t("poCompleted")}</span>
+                              : <span className="text-orange-500 dark:text-orange-400 font-bold flex items-center gap-1 text-xs bg-orange-50 dark:bg-orange-900/20 px-2 py-1 rounded border border-orange-100 dark:border-orange-900/30">⏳ {t("poPending")}</span>
                           ) : (
                             <span className="text-gray-300 dark:text-zinc-600">-</span>
                           )}
@@ -268,7 +250,7 @@ export default function DashboardCotizaciones() {
                           <Link
                             href={`/cotizaciones/${cot.id}`}
                             className="inline-flex items-center justify-center p-2 text-gray-400 hover:text-blue-600 dark:text-gray-500 dark:hover:text-blue-400 hover:bg-white dark:hover:bg-zinc-800 border border-transparent hover:border-blue-100 dark:hover:border-blue-900/30 rounded-lg transition-all shadow-none hover:shadow-sm"
-                            title="Ver detalles y gestionar"
+                            title={t("viewDetails")}
                           >
                             <Eye size={20} />
                           </Link>
@@ -280,9 +262,8 @@ export default function DashboardCotizaciones() {
               </table>
             </div>
 
-            {/* Footer de la tabla con contador */}
             <div className="p-4 border-t border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-950 text-xs text-gray-500 dark:text-gray-500 flex justify-between items-center">
-              <span>Mostrando {cotizacionesFiltradas.length} de {cotizaciones.length} registros</span>
+              <span>{t("showingOf", { count: cotizacionesFiltradas.length, total: cotizaciones.length })}</span>
             </div>
           </div>
         ) : (
@@ -290,8 +271,6 @@ export default function DashboardCotizaciones() {
             <KanbanBoard
               cotizaciones={cotizacionesFiltradas}
               onStatusChange={() => {
-                // Por ahora no necesitamos recargar todo, la actualización optimista se encarga.
-                // Si quisiéramos recargar, llamaríamos a cargarDatos()
                 console.log("Kanban status changed");
               }}
             />
