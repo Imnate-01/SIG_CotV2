@@ -3,7 +3,6 @@ import React, { useState, useEffect, useCallback } from "react";
 import api from "@/services/api";
 import { useDropzone } from "react-dropzone";
 import { PDFDocument } from "pdf-lib";
-import { pdf } from "@react-pdf/renderer";
 import { useParams, useRouter } from "next/navigation"; // Added useParams, useRouter
 import {
     Download,
@@ -316,6 +315,7 @@ const ModalVistaPrevia: React.FC<ModalVistaPreviaProps> = ({ isOpen, onClose, fo
     const handleDownloadMerged = async () => {
         setIsMerging(true);
         try {
+            const { pdf } = await import("@react-pdf/renderer");
             const quoteBlob = await pdf(<CotizacionPDF formData={formData} itemsServicio={itemsServicio} aplicarIVA={aplicarIVA} tarifas={tarifas} folio={folio} usuariosRegistrados={usuariosRegistrados} />).toBlob();
             if (!reporteTecnico) {
                 const url = URL.createObjectURL(quoteBlob);

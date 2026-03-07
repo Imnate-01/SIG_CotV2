@@ -27,7 +27,6 @@ import {
 import { toast } from "sonner";
 import dynamic from "next/dynamic";
 import { ReporteTecnicoPDF } from "@/components/ReporteTecnicoPDF";
-import { pdf } from "@react-pdf/renderer";
 
 const PDFViewerDynamic = dynamic(
   () => import("@react-pdf/renderer").then((mod) => mod.PDFViewer),
@@ -583,6 +582,7 @@ export default function NuevoReporteTecnicoPage() {
         />
       );
 
+      const { pdf } = await import("@react-pdf/renderer");
       const asPdf = pdf(doc);
       const blob = await asPdf.toBlob();
 

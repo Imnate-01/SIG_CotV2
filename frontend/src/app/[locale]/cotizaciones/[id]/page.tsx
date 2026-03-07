@@ -14,7 +14,7 @@ import {
   FileText
 } from "lucide-react";
 import dynamic from "next/dynamic";
-import { Document, Page, Text, View, StyleSheet, Image, pdf } from "@react-pdf/renderer";
+import { Document, Page, Text, View, StyleSheet, Image } from "@react-pdf/renderer";
 import { toast } from "sonner"; // Importamos toast
 import { useTranslations } from "next-intl";
 
@@ -325,6 +325,7 @@ export default function GestionCotizacion() {
   };
 
   const handleDownloadPdf = async () => {
+    const { pdf } = await import("@react-pdf/renderer");
     const blob = await pdf(<CotizacionDocument data={cotizacion} />).toBlob();
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
