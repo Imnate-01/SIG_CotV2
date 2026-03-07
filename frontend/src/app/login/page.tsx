@@ -14,7 +14,7 @@ export default function LoginPage() {
   // Elimino errorMsg porque usaremos toast
   // const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Efecto para cargar el email recordado si existe
+  // Efecto para cargar el email recordado + warm-up del backend (Render cold start)
   useEffect(() => {
     if (typeof window !== "undefined") {
       const savedEmail = localStorage.getItem("remember_email");
@@ -23,6 +23,12 @@ export default function LoginPage() {
         setRemember(true);
       }
     }
+
+    // Ping silencioso al backend para despertarlo antes de que el usuario intente hacer login
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+    fetch(`${API_URL}/api/health`, { method: "GET" }).catch(() => {
+      // Ignoramos errores del ping, es solo para warm-up
+    });
   }, []);
 
   const handleSubmit = async (e: FormEvent) => {
@@ -34,7 +40,7 @@ export default function LoginPage() {
       return;
     }
 
-   
+
     // Usamos la variable de entorno. Si no existe (en local), usa localhost.
     const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
