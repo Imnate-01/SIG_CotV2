@@ -33,24 +33,22 @@ import {
     View,
     StyleSheet,
     PDFDownloadLink,
-    PDFViewer,
     Image
 } from "@react-pdf/renderer";
 import dynamic from "next/dynamic";
 import { toast } from "sonner";
 import Link from "next/link"; // Added Link
 
-const PDFViewerDynamic = dynamic(
-    () => import("@react-pdf/renderer").then((mod) => mod.PDFViewer),
-    { ssr: false, loading: () => <p>Cargando visor...</p> }
+const PDFDownloadLinkDynamic = dynamic(
+    () => import("@react-pdf/renderer").then((mod) => mod.PDFDownloadLink),
+    { ssr: false, loading: () => <p>Cargando...</p> }
 );
 
-/* ===================== Tipos (Reused) ===================== */
 interface Proveedor { nombre: string; direccion: string; colonia: string; ciudad: string; cp: string; rfc?: string; }
 interface FacturarA { nombre: string; direccion: string; colonia: string; ciudad: string; cp: string; }
 interface ShipTo { nombre: string; direccion: string; colonia: string; ciudad: string; cp: string; }
 interface Contacto { nombre: string; email: string; telefono: string; }
-interface Condiciones { precios: string; moneda: string; maquina: string; observaciones: string; }
+interface Condiciones { precios: string; moneda: string; maquina: string; observaciones: string; entidad?: "MX" | "US"; }
 interface CotizacionFormData {
     proveedor: Proveedor;
     facturarA: FacturarA;
@@ -283,14 +281,44 @@ interface ModalVistaPreviaProps {
 }
 
 const ModalVistaPrevia: React.FC<ModalVistaPreviaProps> = ({ isOpen, onClose, formData, itemsServicio, aplicarIVA, tarifas, folio, usuariosRegistrados }) => {
-    if (!isOpen) return null;
+    const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!isOpen) return;
+        let url = "";
+        const renderPDF = async () => {
+            try {
+                const { pdf } = await import("@react-pdf/renderer");
+                const blob = await pdf(
+                    <CotizacionPDF
+                        formData={formData}
+                        itemsServicio={itemsServicio}
+                        aplicarIVA={aplicarIVA}
+                        tarifas={tarifas}
+                        folio={folio}
+                        usuariosRegistrados={usuariosRegistrados}
+                    />
+                ).toBlob();
+                url = URL.createObjectURL(blob);
+                setPdfUrl(url);
+            } catch (e) {
+                console.error("PDF Render Error", e);
+            }
+        };
+        renderPDF();
+        return () => { if (url) URL.revokeObjectURL(url); };
+    }, [isOpen, formData, itemsServicio, aplicarIVA, tarifas, folio, usuariosRegistrados]);
+
     const [correoGenerado, setCorreoGenerado] = useState("");
     const [generandoCorreo, setGenerandoCorreo] = useState(false);
     const folioParaIA = folio || "PENDIENTE DE ASIGNACIÓN";
     const [reporteTecnico, setReporteTecnico] = useState<File | null>(null);
     const [isMerging, setIsMerging] = useState(false);
+
     const onDrop = useCallback((acceptedFiles: File[]) => { if (acceptedFiles.length > 0) setReporteTecnico(acceptedFiles[0]); }, []);
     const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop, accept: { 'application/pdf': ['.pdf'] }, multiple: false });
+
+    if (!isOpen) return null;
 
     const copiarAlPortapapeles = (texto: string) => {
         if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(texto).then(() => toast.success("Copiado")).catch(() => { }); }
@@ -346,8 +374,15 @@ const ModalVistaPrevia: React.FC<ModalVistaPreviaProps> = ({ isOpen, onClose, fo
                             <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg text-gray-500"><X size={24} /></button>
                         </div>
                     </div>
-                    <div className="flex-1 bg-gray-100 dark:bg-zinc-950">
-                        <PDFViewerDynamic width="100%" height="100%" className="border-0"><CotizacionPDF formData={formData} itemsServicio={itemsServicio} aplicarIVA={aplicarIVA} tarifas={tarifas} folio={folio} usuariosRegistrados={usuariosRegistrados} /></PDFViewerDynamic>
+                    <div className="flex-1 bg-gray-100 dark:bg-zinc-950 relative">
+                        {pdfUrl ? (
+                            <iframe src={pdfUrl} className="w-full h-full border-0" title="Vista Previa PDF" />
+                        ) : (
+                            <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-500">
+                                <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+                                <p>Cargando vista previa...</p>
+                            </div>
+                        )}
                     </div>
                 </div>
                 <div className="w-1/3 bg-gray-50 dark:bg-zinc-950 p-6 flex flex-col overflow-y-auto gap-8 border-l border-gray-200 dark:border-zinc-800">
@@ -488,7 +523,8 @@ const EditarCotizacionPage: React.FC = () => {
                         precios: condiciones.precios || "Los precios cotizados no incluyen IVA",
                         moneda: condiciones.moneda || "USD",
                         maquina: condiciones.maquina || "",
-                        observaciones: condiciones.observaciones || ""
+                        observaciones: condiciones.observaciones || "",
+                        entidad: condiciones.entidad || "MX"
                     },
                     descripcion: cot.descripcion || "",
                     tipo_servicio: cot.tipo_servicio || "TM"
@@ -720,6 +756,23 @@ const EditarCotizacionPage: React.FC = () => {
                                 <option value="Project">Proyecto (Project)</option>
                                 <option value="Training">Entrenamiento</option>
                                 <option value="Spares">Repuestos</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Entidad Emisora</label>
+                            <select value={formData.condiciones.entidad || 'MX'} onChange={(e) => {
+                                const val = e.target.value as "MX" | "US";
+                                const proveedorUS = { nombre: "SIG US Inc.", direccion: "123 Main St", colonia: "Suite 100", ciudad: "Chicago, IL", cp: "60007", rfc: "" };
+                                const proveedorMX = { nombre: "SIG Combibloc México, S.A. de C.V.", direccion: "Av. Emilio Castelar No. 75", colonia: "Polanco IV Sección", ciudad: "Ciudad de México", cp: "11550", rfc: "" };
+                                setFormData(prev => ({
+                                    ...prev,
+                                    condiciones: { ...prev.condiciones, entidad: val, moneda: val === "US" ? "USD" : prev.condiciones.moneda },
+                                    proveedor: val === "US" ? proveedorUS : proveedorMX
+                                }));
+                            }} className="w-full px-4 py-3 border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option value="MX">SIG MX (México)</option>
+                                <option value="US">SIG US (Estados Unidos)</option>
                             </select>
                         </div>
 

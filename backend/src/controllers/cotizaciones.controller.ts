@@ -145,9 +145,9 @@ Observaciones: ${condiciones?.observaciones || ''}
 
       if (errorItems) throw errorItems
 
-      // I. Calcular el folio (SIG-{ID})
-      // Nota: Ahora usamos SIG, como pediste, en lugar de ST/SM
-      const numero_cotizacion = `SIG-${cotizacion.id}`;
+      // I. Calcular el folio (SIG-[MX/US]-{ID})
+      const entidad = condiciones?.entidad || 'MX';
+      const numero_cotizacion = `SIG-${entidad}-${cotizacion.id}`;
 
       res.status(201).json({
         success: true,
@@ -188,11 +188,12 @@ Observaciones: ${condiciones?.observaciones || ''}
 
       if (error) throw error
 
-      // Formatear con la nueva nomenclatura SIG-ID
+      // Formatear con la nueva nomenclatura SIG-[ENTIDAD]-ID
       const cotizacionesFormateadas = data.map((cot: any) => {
+        const entidad = cot.condiciones?.entidad || 'MX';
         return {
           ...cot,
-          numero_cotizacion: `SIG-${cot.id}`,
+          numero_cotizacion: `SIG-${entidad}-${cot.id}`,
           creado_por_nombre: cot.usuarios?.nombre || 'Desconocido'
         }
       })
@@ -231,7 +232,7 @@ Observaciones: ${condiciones?.observaciones || ''}
         success: true,
         data: {
           ...data,
-          numero_cotizacion: `SIG-${data.id}`
+          numero_cotizacion: `SIG-${data.condiciones?.entidad || 'MX'}-${data.id}`
         }
       })
     } catch (error: any) {
