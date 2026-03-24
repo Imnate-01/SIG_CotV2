@@ -38,7 +38,7 @@ export async function proxy(request: NextRequest) {
 
     try {
       if (!process.env.SUPABASE_JWT_SECRET) {
-        console.error(" ERROR: Falta SUPABASE_JWT_SECRET en .env.local");
+        console.error("   ERROR: Falta SUPABASE_JWT_SECRET en .env.local");
         return redirectToLogin(request);
       }
 

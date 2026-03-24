@@ -60,6 +60,7 @@ interface ReporteTecnicoPDFProps {
     firmaSIG?: string;
     firmaCliente?: string;
     clienteNombre?: string;
+    tPDF?: Record<string, string>;
 }
 
 // --- Styles Optimizados para Espacio ---
@@ -138,7 +139,7 @@ const styles = StyleSheet.create({
     footer: { position: 'absolute', bottom: 15, left: 20, right: 20, textAlign: 'center', fontSize: 7, color: '#94a3b8', borderTop: '0.5px solid #e2e8f0', paddingTop: 4 },
 });
 
-export const ReporteTecnicoPDF: React.FC<ReporteTecnicoPDFProps> = ({ datos, catalogo, respuestas, acciones, cierre, firmaSIG, firmaCliente, clienteNombre }) => {
+export const ReporteTecnicoPDF: React.FC<ReporteTecnicoPDFProps> = ({ datos, catalogo, respuestas, acciones, cierre, firmaSIG, firmaCliente, clienteNombre, tPDF }) => {
 
     // Calculate KPIs
     const allItems = catalogo.flatMap(s => s.items);
@@ -155,10 +156,10 @@ export const ReporteTecnicoPDF: React.FC<ReporteTecnicoPDFProps> = ({ datos, cat
 
     const getStatusBadge = (status: string) => {
         switch (status) {
-            case 'Conformable': return { text: 'OK', style: styles.badgeSuccess }; // Shortened text
-            case 'Non-compliant': return { text: 'NOK', style: styles.badgeError };
-            case 'N/A': return { text: 'N/A', style: styles.badgeNeutral };
-            default: return { text: '?', style: styles.badgeWarning }; // Unverified
+            case 'Conformable': return { text: tPDF?.conformable || 'OK', style: styles.badgeSuccess }; // Shortened text
+            case 'Non-compliant': return { text: tPDF?.nonCompliant || 'NOK', style: styles.badgeError };
+            case 'N/A': return { text: tPDF?.na || 'N/A', style: styles.badgeNeutral };
+            default: return { text: tPDF?.pending || '?', style: styles.badgeWarning }; // Unverified
         }
     };
 
@@ -178,39 +179,39 @@ export const ReporteTecnicoPDF: React.FC<ReporteTecnicoPDFProps> = ({ datos, cat
                         <Image src="/SIG_logo.png" style={styles.logo} />
                     </View>
                     <View style={{ alignItems: 'flex-end' }}>
-                        <Text style={styles.headerTitle}>REPORTE TÉCNICO</Text>
-                        <Text style={styles.headerSub}>Technical Service Report | {datos.maquina_serie}</Text>
+                        <Text style={styles.headerTitle}>{tPDF?.headerTitle || 'REPORTE TÉCNICO'}</Text>
+                        <Text style={styles.headerSub}>{tPDF?.headerSub || 'Technical Service Report'} | {datos.maquina_serie}</Text>
                     </View>
                 </View>
 
                 {/* PAGE 1 CONTENT: KPIs & Info */}
                 <View style={styles.kpiContainer}>
-                    <View style={styles.kpiCard}><Text style={[styles.kpiValue, { color: '#10b981' }]}>{conformable}</Text><Text style={styles.kpiLabel}>Conformable</Text></View>
-                    <View style={styles.kpiCard}><Text style={[styles.kpiValue, { color: '#ef4444' }]}>{nonCompliant}</Text><Text style={styles.kpiLabel}>Non-Compliant</Text></View>
-                    <View style={styles.kpiCard}><Text style={[styles.kpiValue, { color: '#f59e0b' }]}>{unverified}</Text><Text style={styles.kpiLabel}>Pending</Text></View>
-                    <View style={styles.kpiCard}><Text style={[styles.kpiValue, { color: '#64748b' }]}>{na}</Text><Text style={styles.kpiLabel}>N/A</Text></View>
-                    <View style={[styles.kpiCard, { backgroundColor: '#eff6ff', borderColor: '#bfdbfe' }]}><Text style={[styles.kpiValue, { color: '#2563eb' }]}>{total}</Text><Text style={styles.kpiLabel}>Total</Text></View>
+                    <View style={styles.kpiCard}><Text style={[styles.kpiValue, { color: '#10b981' }]}>{conformable}</Text><Text style={styles.kpiLabel}>{tPDF?.conformable || 'Conformable'}</Text></View>
+                    <View style={styles.kpiCard}><Text style={[styles.kpiValue, { color: '#ef4444' }]}>{nonCompliant}</Text><Text style={styles.kpiLabel}>{tPDF?.nonCompliant || 'Non-Compliant'}</Text></View>
+                    <View style={styles.kpiCard}><Text style={[styles.kpiValue, { color: '#f59e0b' }]}>{unverified}</Text><Text style={styles.kpiLabel}>{tPDF?.pending || 'Pending'}</Text></View>
+                    <View style={styles.kpiCard}><Text style={[styles.kpiValue, { color: '#64748b' }]}>{na}</Text><Text style={styles.kpiLabel}>{tPDF?.na || 'N/A'}</Text></View>
+                    <View style={[styles.kpiCard, { backgroundColor: '#eff6ff', borderColor: '#bfdbfe' }]}><Text style={[styles.kpiValue, { color: '#2563eb' }]}>{total}</Text><Text style={styles.kpiLabel}>{tPDF?.total || 'Total'}</Text></View>
                 </View>
 
                 <View>
-                    <Text style={styles.sectionTitleFirst}>INFORMACIÓN GENERAL</Text>
+                    <Text style={styles.sectionTitleFirst}>{tPDF?.generalInfo || 'INFORMACIÓN GENERAL'}</Text>
                     <View style={styles.row}>
-                        <View style={styles.col}><Text style={styles.label}>Cliente:</Text><Text style={styles.value}>{clienteNombre || 'N/A'}</Text></View>
-                        <View style={styles.col}><Text style={styles.label}>Planta:</Text><Text style={styles.value}>{datos.planta}</Text></View>
-                        <View style={styles.col}><Text style={styles.label}>Responsable:</Text><Text style={styles.value}>{datos.responsable_cliente}</Text></View>
-                        <View style={styles.col}><Text style={styles.label}>Fecha:</Text><Text style={styles.value}>{datos.fecha_inicio}</Text></View>
+                        <View style={styles.col}><Text style={styles.label}>{tPDF?.lblClient || 'Cliente:'}</Text><Text style={styles.value}>{clienteNombre || 'N/A'}</Text></View>
+                        <View style={styles.col}><Text style={styles.label}>{tPDF?.lblPlant || 'Planta:'}</Text><Text style={styles.value}>{datos.planta}</Text></View>
+                        <View style={styles.col}><Text style={styles.label}>{tPDF?.lblResponsible || 'Responsable:'}</Text><Text style={styles.value}>{datos.responsable_cliente}</Text></View>
+                        <View style={styles.col}><Text style={styles.label}>{tPDF?.lblDate || 'Fecha:'}</Text><Text style={styles.value}>{datos.fecha_inicio}</Text></View>
                     </View>
                     <View style={styles.row}>
-                        <View style={styles.col}><Text style={styles.label}>Máquina:</Text><Text style={styles.value}>{datos.maquina_serie}</Text></View>
-                        <View style={styles.col}><Text style={styles.label}>H. Máquina:</Text><Text style={styles.value}>{datos.horas_maquina}</Text></View>
-                        <View style={styles.col}><Text style={styles.label}>Propósito:</Text><Text style={styles.value}>{datos.proposito_visita}</Text></View>
+                        <View style={styles.col}><Text style={styles.label}>{tPDF?.lblMachine || 'Máquina:'}</Text><Text style={styles.value}>{datos.maquina_serie}</Text></View>
+                        <View style={styles.col}><Text style={styles.label}>{tPDF?.lblHours || 'H. Máquina:'}</Text><Text style={styles.value}>{datos.horas_maquina}</Text></View>
+                        <View style={styles.col}><Text style={styles.label}>{tPDF?.lblPurpose || 'Propósito:'}</Text><Text style={styles.value}>{datos.proposito_visita}</Text></View>
                     </View>
                 </View>
 
                 <View style={{ marginTop: 5 }}>
-                    <Text style={styles.sectionTitle}>RESUMEN EJECUTIVO</Text>
+                    <Text style={styles.sectionTitle}>{tPDF?.execSummary || 'RESUMEN EJECUTIVO'}</Text>
                     <Text style={{ fontSize: 9, lineHeight: 1.3, color: '#334155', textAlign: 'justify' }}>
-                        {cierre.comentarios_finales || 'Sin comentarios finales.'}
+                        {cierre.comentarios_finales || (tPDF?.noFinalComments || 'Sin comentarios finales.')}
                     </Text>
                 </View>
 
@@ -224,9 +225,9 @@ export const ReporteTecnicoPDF: React.FC<ReporteTecnicoPDFProps> = ({ datos, cat
 
                         <View style={styles.table}>
                             <View style={styles.tableHeader}>
-                                <Text style={[styles.colDesc, { fontWeight: 'bold' }]}>Punto de Inspección</Text>
-                                <Text style={[styles.colStatus, { fontWeight: 'bold' }]}>Estado</Text>
-                                <Text style={[styles.colObs, { fontWeight: 'bold' }]}>Obs./Evidencia</Text>
+                                <Text style={[styles.colDesc, { fontWeight: 'bold' }]}>{tPDF?.inspectionPoint || 'Punto de Inspección'}</Text>
+                                <Text style={[styles.colStatus, { fontWeight: 'bold' }]}>{tPDF?.status || 'Estado'}</Text>
+                                <Text style={[styles.colObs, { fontWeight: 'bold' }]}>{tPDF?.obsEvidence || 'Obs./Evidencia'}</Text>
                             </View>
 
                             {seccion.items.map(item => {
@@ -264,7 +265,7 @@ export const ReporteTecnicoPDF: React.FC<ReporteTecnicoPDFProps> = ({ datos, cat
 
                 {/* CLOSING & SIGNATURES */}
                 <View break={false} style={{ marginTop: 10 }}>
-                    <Text style={styles.sectionTitle}>PLAN DE ACCIÓN Y CIERRE</Text>
+                    <Text style={styles.sectionTitle}>{tPDF?.actionPlanClosing || 'PLAN DE ACCIÓN Y CIERRE'}</Text>
 
                     {acciones.length > 0 ? (
                         acciones.map((accion) => (
@@ -282,16 +283,16 @@ export const ReporteTecnicoPDF: React.FC<ReporteTecnicoPDFProps> = ({ datos, cat
                             </View>
                         ))
                     ) : (
-                        <Text style={{ fontSize: 8, fontStyle: 'italic', color: '#94a3b8' }}>No hay acciones registradas.</Text>
+                        <Text style={{ fontSize: 8, fontStyle: 'italic', color: '#94a3b8' }}>{tPDF?.noActions || 'No hay acciones registradas.'}</Text>
                     )}
 
                     <View style={{ flexDirection: 'row', marginTop: 10, gap: 10 }}>
                         <View style={{ flex: 1 }}>
-                            <Text style={[styles.label, { fontWeight: 'bold' }]}>Eficiencias:</Text>
+                            <Text style={[styles.label, { fontWeight: 'bold' }]}>{tPDF?.lblEfficiencies || 'Eficiencias:'}</Text>
                             <Text style={styles.value}>{cierre.eficiencias || '—'}</Text>
                         </View>
                         <View style={{ flex: 1 }}>
-                            <Text style={[styles.label, { fontWeight: 'bold' }]}>Pérdidas/Riesgos:</Text>
+                            <Text style={[styles.label, { fontWeight: 'bold' }]}>{tPDF?.lblLosses || 'Pérdidas/Riesgos:'}</Text>
                             <Text style={styles.value}>{cierre.perdidas || '—'}</Text>
                         </View>
                     </View>
@@ -303,7 +304,7 @@ export const ReporteTecnicoPDF: React.FC<ReporteTecnicoPDFProps> = ({ datos, cat
                             ) : <View style={{ height: 50 }} />}
                             <View style={styles.signatureLine} />
                             <Text style={styles.signatureName}>SIG Combibloc</Text>
-                            <Text style={styles.signatureRole}>Ingeniero de Servicio</Text>
+                            <Text style={styles.signatureRole}>{tPDF?.sigEngineer || 'Ingeniero de Servicio'}</Text>
                         </View>
 
                         <View style={styles.signatureBox}>
@@ -312,14 +313,14 @@ export const ReporteTecnicoPDF: React.FC<ReporteTecnicoPDFProps> = ({ datos, cat
                             ) : <View style={{ height: 50 }} />}
                             <View style={styles.signatureLine} />
                             <Text style={styles.signatureName}>{datos.responsable_cliente}</Text>
-                            <Text style={styles.signatureRole}>Responsable Cliente</Text>
+                            <Text style={styles.signatureRole}>{tPDF?.clientResponsible || 'Responsable Cliente'}</Text>
                         </View>
                     </View>
                 </View>
 
                 {/* FIXED FOOTER */}
                 <Text style={styles.footer} fixed render={({ pageNumber, totalPages }) => (
-                    `Reporte generado el ${new Date().toLocaleDateString()} | SIG Combibloc | Pág. ${pageNumber} / ${totalPages}`
+                    `${tPDF?.footerPrefix || 'Reporte generado el'} ${new Date().toLocaleDateString()} | SIG Combibloc | ${tPDF?.footerPage || 'Pág.'} ${pageNumber} / ${totalPages}`
                 )} />
             </Page>
         </Document>

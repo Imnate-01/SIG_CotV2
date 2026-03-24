@@ -25,6 +25,7 @@ import {
   Download,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import dynamic from "next/dynamic";
 import { ReporteTecnicoPDF } from "@/components/ReporteTecnicoPDF";
 
@@ -59,6 +60,13 @@ interface RespuestaInspeccion {
 
   // Si ya existe url(s) guardada(s)
   evidencias?: string[];
+}
+
+interface Participante {
+  id: string;
+  nombre: string;
+  puesto: string;
+  empresa: string;
 }
 
 interface AccionPlan {
@@ -211,6 +219,40 @@ function SignaturePad({
 export default function NuevoReporteTecnicoPage() {
   const router = useRouter();
 
+  const t = useTranslations("NuevoReporte");
+  const tPDFhook = useTranslations("ReportePDF");
+
+  const tPDF = {
+    headerTitle: tPDFhook("headerTitle"),
+    headerSub: tPDFhook("headerSub"),
+    conformable: tPDFhook("conformable"),
+    nonCompliant: tPDFhook("nonCompliant"),
+    pending: tPDFhook("pending"),
+    na: tPDFhook("na"),
+    total: tPDFhook("total"),
+    generalInfo: tPDFhook("generalInfo"),
+    lblClient: tPDFhook("lblClient"),
+    lblPlant: tPDFhook("lblPlant"),
+    lblResponsible: tPDFhook("lblResponsible"),
+    lblDate: tPDFhook("lblDate"),
+    lblMachine: tPDFhook("lblMachine"),
+    lblHours: tPDFhook("lblHours"),
+    lblPurpose: tPDFhook("lblPurpose"),
+    execSummary: tPDFhook("execSummary"),
+    noFinalComments: tPDFhook("noFinalComments"),
+    inspectionPoint: tPDFhook("inspectionPoint"),
+    status: tPDFhook("status"),
+    obsEvidence: tPDFhook("obsEvidence"),
+    actionPlanClosing: tPDFhook("actionPlanClosing"),
+    noActions: tPDFhook("noActions"),
+    lblEfficiencies: tPDFhook("lblEfficiencies"),
+    lblLosses: tPDFhook("lblLosses"),
+    sigEngineer: tPDFhook("sigEngineer"),
+    clientResponsible: tPDFhook("clientResponsible"),
+    footerPrefix: tPDFhook("footerPrefix"),
+    footerPage: tPDFhook("footerPage"),
+  };
+
   const [loading, setLoading] = useState(true);
   const [savingFinal, setSavingFinal] = useState(false);
 
@@ -218,11 +260,14 @@ export default function NuevoReporteTecnicoPage() {
 
   const [catalogo, setCatalogo] = useState<SeccionCatalogo[]>([]);
   const [clientes, setClientes] = useState<any[]>([]);
+  const [direccionesCliente, setDireccionesCliente] = useState<any[]>([]);
+  const [usarPlantaOtra, setUsarPlantaOtra] = useState(false);
   const [seccionActivaId, setSeccionActivaId] = useState<number | null>(null);
 
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [draftStatus, setDraftStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [lastDraftAt, setLastDraftAt] = useState<number | null>(null);
+  const [serverDraftId, setServerDraftId] = useState<string | null>(null);
 
   // ── DATOS GENERALES (alineado a tu tabla)
   const [datos, setDatos] = useState({
@@ -260,6 +305,9 @@ export default function NuevoReporteTecnicoPage() {
   // Acciones (alineado a tu tabla)
   const [acciones, setAcciones] = useState<AccionPlan[]>([]);
 
+  // Participantes
+  const [participantes, setParticipantes] = useState<Participante[]>([]);
+
   // Firmas (canvas base64 -> backend lo sube y guarda URL)
   const [firmaSIG, setFirmaSIG] = useState<string | undefined>(undefined);
   const [firmaCliente, setFirmaCliente] = useState<string | undefined>(undefined);
@@ -291,10 +339,12 @@ export default function NuevoReporteTecnicoPage() {
         if (local?.comentariosSeccion) setComentariosSeccion(local.comentariosSeccion);
         if (local?.cierre) setCierre(local.cierre);
         if (local?.acciones) setAcciones(local.acciones);
+        if (local?.participantes) setParticipantes(local.participantes);
         if (local?.paso) setPaso(local.paso);
         if (local?.seccionActivaId) setSeccionActivaId(local.seccionActivaId);
         if (local?.firmaSIG) setFirmaSIG(local.firmaSIG);
         if (local?.firmaCliente) setFirmaCliente(local.firmaCliente);
+        if (local?.serverDraftId) setServerDraftId(local.serverDraftId);
 
       } catch (e) {
         console.error(e);
@@ -347,35 +397,42 @@ export default function NuevoReporteTecnicoPage() {
       comentariosSeccion,
       cierre,
       acciones,
+      participantes,
       paso,
       seccionActivaId,
       firmaSIG,
       firmaCliente,
     };
-  }, [acciones, cierre, comentariosSeccion, datos, firmaCliente, firmaSIG, paso, respuestas, seccionActivaId]);
+  }, [acciones, cierre, comentariosSeccion, datos, firmaCliente, firmaSIG, participantes, paso, respuestas, seccionActivaId]);
 
   useDebouncedEffect(() => {
     if (loading) return;
 
     // local
-    localStorage.setItem("tsr_draft_v3", JSON.stringify(draftPayload));
+    localStorage.setItem("tsr_draft_v3", JSON.stringify({ ...draftPayload, serverDraftId }));
 
     // api draft
     (async () => {
       try {
         setDraftStatus("saving");
-        await api.post("/reportes-tecnicos/draft", {
+        const resp = await api.post("/reportes-tecnicos/draft", {
           cliente_id: datos.cliente_id || null,
+          draft_id: serverDraftId,
           datos_generales: datos,
           payload: draftPayload,
         });
+
+        if (resp.data?.data?.id && !serverDraftId) {
+          setServerDraftId(resp.data.data.id);
+        }
+
         setDraftStatus("saved");
         setLastDraftAt(Date.now());
       } catch (e) {
         setDraftStatus("error");
       }
     })();
-  }, [draftPayload], 900);
+  }, [draftPayload, serverDraftId], 900);
 
   const DraftBadge = () => {
     const label =
@@ -459,6 +516,17 @@ export default function NuevoReporteTecnicoPage() {
   const setComentarioSeccionActiva = (texto: string) => {
     if (!seccionActivaId) return;
     setComentariosSeccion((prev) => ({ ...prev, [seccionActivaId]: texto }));
+  };
+
+  // Participantes
+  const agregarParticipante = () => {
+    setParticipantes(prev => [...prev, { id: uid(), nombre: "", puesto: "", empresa: "SIG" }]);
+  };
+  const actualizarParticipante = (id: string, campo: keyof Participante, valor: string) => {
+    setParticipantes(prev => prev.map(p => p.id === id ? { ...p, [campo]: valor } : p));
+  };
+  const eliminarParticipante = (id: string) => {
+    setParticipantes(prev => prev.filter(p => p.id !== id));
   };
 
   // Acciones
@@ -579,6 +647,7 @@ export default function NuevoReporteTecnicoPage() {
           firmaSIG={firmaSIG}
           firmaCliente={firmaCliente}
           clienteNombre={clienteNombre}
+          tPDF={tPDF}
         />
       );
 
@@ -748,18 +817,25 @@ export default function NuevoReporteTecnicoPage() {
         {paso === 1 && (
           <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-slate-100 dark:border-zinc-800 p-6 sm:p-8">
             <h2 className="text-lg font-extrabold text-slate-800 dark:text-white flex items-center gap-2 mb-6">
-              <FileText className="text-blue-600 dark:text-blue-400" /> Información General
+              <FileText className="text-blue-600 dark:text-blue-400" /> {t("step1Title")}
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
-                <label className="block text-sm font-extrabold text-slate-700 dark:text-gray-300 mb-1">Cliente</label>
+                <label className="block text-sm font-extrabold text-slate-700 dark:text-gray-300 mb-1">{t("client")}</label>
                 <select
                   className="w-full p-3 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={datos.cliente_id}
-                  onChange={(e) => setDatos({ ...datos, cliente_id: e.target.value })}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setDatos({ ...datos, cliente_id: val, planta: "" });
+                    const cli = clientes.find((c: any) => String(c.id) === val);
+                    const dirs = cli?.cliente_direcciones?.filter((d: any) => d.tipo === 'ship_to') || [];
+                    setDireccionesCliente(dirs);
+                    setUsarPlantaOtra(dirs.length === 0);
+                  }}
                 >
-                  <option value="">-- Seleccionar --</option>
+                  <option value="">{t("select")}</option>
                   {clientes.map((c: any) => (
                     <option key={c.id} value={c.id}>{c.nombre}</option>
                   ))}
@@ -767,17 +843,45 @@ export default function NuevoReporteTecnicoPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-extrabold text-slate-700 dark:text-gray-300 mb-1">Planta / Ubicación</label>
-                <input
-                  className="w-full p-3 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={datos.planta}
-                  onChange={(e) => setDatos({ ...datos, planta: e.target.value })}
-                  placeholder="Ej. Planta Toluca"
-                />
+                <label className="block text-sm font-extrabold text-slate-700 dark:text-gray-300 mb-1">{t("plantLocation")}</label>
+                {!usarPlantaOtra && direccionesCliente.length > 0 ? (
+                  <select
+                    className="w-full p-3 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={direccionesCliente.some(d => d.empresa_planta_nombre === datos.planta) ? datos.planta : (datos.planta ? "otra" : "")}
+                    onChange={(e) => {
+                      if (e.target.value === "otra") {
+                        setUsarPlantaOtra(true);
+                        setDatos({ ...datos, planta: "" });
+                      } else {
+                        setDatos({ ...datos, planta: e.target.value });
+                      }
+                    }}
+                  >
+                    <option value="">{t("select")}</option>
+                    {direccionesCliente.map((d: any) => (
+                      <option key={d.id} value={d.empresa_planta_nombre}>{d.empresa_planta_nombre}</option>
+                    ))}
+                    <option value="otra">Otra (Ingresar manualmente)</option>
+                  </select>
+                ) : (
+                  <div className="flex gap-2 isolate">
+                    <input
+                      className="w-full p-3 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      value={datos.planta}
+                      onChange={(e) => setDatos({ ...datos, planta: e.target.value })}
+                      placeholder={t("plantPlaceholder")}
+                    />
+                    {direccionesCliente.length > 0 && (
+                      <button type="button" onClick={() => setUsarPlantaOtra(false)} className="text-xs font-bold text-blue-600 underline whitespace-nowrap">
+                        Volver a lista
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div>
-                <label className="block text-sm font-extrabold text-slate-700 dark:text-gray-300 mb-1">Responsable Cliente</label>
+                <label className="block text-sm font-extrabold text-slate-700 dark:text-gray-300 mb-1">{t("clientResponsible")}</label>
                 <input
                   className="w-full p-3 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={datos.responsable_cliente}
@@ -786,7 +890,7 @@ export default function NuevoReporteTecnicoPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-extrabold text-slate-700 dark:text-gray-300 mb-1">Número de serie</label>
+                <label className="block text-sm font-extrabold text-slate-700 dark:text-gray-300 mb-1">{t("serialNumber")}</label>
                 <input
                   className="w-full p-3 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={datos.maquina_serie}
@@ -795,7 +899,7 @@ export default function NuevoReporteTecnicoPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-extrabold text-slate-700 dark:text-gray-300 mb-1">Horómetro (Horas)</label>
+                <label className="block text-sm font-extrabold text-slate-700 dark:text-gray-300 mb-1">{t("machineHours")}</label>
                 <input
                   type="number"
                   className="w-full p-3 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -806,7 +910,7 @@ export default function NuevoReporteTecnicoPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-extrabold text-slate-700 dark:text-gray-300 mb-1">Fecha inicio</label>
+                  <label className="block text-sm font-extrabold text-slate-700 dark:text-gray-300 mb-1">{t("startDate")}</label>
                   <input
                     type="date"
                     className="w-full p-3 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -815,7 +919,7 @@ export default function NuevoReporteTecnicoPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-extrabold text-slate-700 dark:text-gray-300 mb-1">Fecha fin</label>
+                  <label className="block text-sm font-extrabold text-slate-700 dark:text-gray-300 mb-1">{t("endDate")}</label>
                   <input
                     type="date"
                     className="w-full p-3 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -826,7 +930,7 @@ export default function NuevoReporteTecnicoPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-extrabold text-slate-700 dark:text-gray-300 mb-1">Email</label>
+                <label className="block text-sm font-extrabold text-slate-700 dark:text-gray-300 mb-1">{t("email")}</label>
                 <input
                   className="w-full p-3 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-900 dark:text-white"
                   value={datos.email_cliente}
@@ -835,7 +939,7 @@ export default function NuevoReporteTecnicoPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-extrabold text-slate-700 dark:text-gray-300 mb-1">Teléfono</label>
+                <label className="block text-sm font-extrabold text-slate-700 dark:text-gray-300 mb-1">{t("phone")}</label>
                 <input
                   className="w-full p-3 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-900 dark:text-white"
                   value={datos.telefono_cliente}
@@ -845,30 +949,30 @@ export default function NuevoReporteTecnicoPage() {
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-sm font-extrabold text-slate-700 dark:text-gray-300 mb-1">Propósito de visita</label>
+                <label className="block text-sm font-extrabold text-slate-700 dark:text-gray-300 mb-1">{t("visitPurpose")}</label>
                 <input className="w-full p-3 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-900 dark:text-white" value={datos.proposito_visita} onChange={(e) => setDatos({ ...datos, proposito_visita: e.target.value })} />
               </div>
 
               {/* Reunión apertura / cierre + comentario */}
               <div className="rounded-2xl border border-slate-200 dark:border-zinc-800 p-4 bg-slate-50 dark:bg-zinc-900/50">
-                <p className="font-extrabold text-slate-800 dark:text-white mb-2">Reuniones</p>
+                <p className="font-extrabold text-slate-800 dark:text-white mb-2">{t("meetings")}</p>
                 <label className="flex items-center gap-2 font-bold text-slate-700 dark:text-gray-300">
                   <input type="checkbox" checked={datos.reunion_apertura} onChange={(e) => setDatos({ ...datos, reunion_apertura: e.target.checked })} className="h-4 w-4 accent-blue-600" />
-                  Reunión de apertura
+                  {t("openingMeeting")}
                 </label>
                 <label className="mt-2 flex items-center gap-2 font-bold text-slate-700 dark:text-gray-300">
                   <input type="checkbox" checked={datos.reunion_cierre} onChange={(e) => setDatos({ ...datos, reunion_cierre: e.target.checked })} className="h-4 w-4 accent-blue-600" />
-                  Reunión de cierre
+                  {t("closingMeeting")}
                 </label>
-                <textarea className="mt-3 w-full p-3 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-500" placeholder="Comentarios apertura (opcional)" value={datos.comentarios_apertura} onChange={(e) => setDatos({ ...datos, comentarios_apertura: e.target.value })} />
+                <textarea className="mt-3 w-full p-3 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-500" placeholder={t("openingComments")} value={datos.comentarios_apertura} onChange={(e) => setDatos({ ...datos, comentarios_apertura: e.target.value })} />
               </div>
 
               {/* Producción */}
               <div className="rounded-2xl border border-slate-200 dark:border-zinc-800 p-4 bg-slate-50 dark:bg-zinc-900/50">
-                <p className="font-extrabold text-slate-800 dark:text-white mb-2">Producción / pruebas</p>
+                <p className="font-extrabold text-slate-800 dark:text-white mb-2">{t("productionTest")}</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs font-extrabold text-slate-600 dark:text-gray-400">Tipo llenado</label>
+                    <label className="text-xs font-extrabold text-slate-600 dark:text-gray-400">{t("fillType")}</label>
                     <select className="mt-1 w-full p-3 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-900 dark:text-white" value={datos.tipo_llenado} onChange={(e) => setDatos({ ...datos, tipo_llenado: e.target.value })}>
                       <option value="Water">Water</option>
                       <option value="Product">Product</option>
@@ -1134,17 +1238,50 @@ export default function NuevoReporteTecnicoPage() {
         {/* STEP 3: Participantes */}
         {paso === 3 && (
           <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-slate-100 dark:border-zinc-800 p-6 sm:p-8">
-            <h2 className="text-lg font-extrabold text-slate-800 dark:text-white flex items-center gap-2 mb-6">
-              <CheckSquare className="text-blue-600 dark:text-blue-400" /> Participantes / Responsabilidades
-            </h2>
-            <div className="rounded-2xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800 p-5">
-              <p className="text-sm text-slate-700 dark:text-gray-300 font-bold">
-                Este paso está listo para conectarse a tu tabla <span className="font-extrabold">reporte_participantes</span>.
-              </p>
-              <p className="text-xs text-slate-500 dark:text-gray-400 mt-1">
-                Por ahora se guarda en borrador (meta) y luego lo persistimos en backend.
-              </p>
+            <div className="flex items-center justify-between gap-3 mb-6">
+              <h2 className="text-lg font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
+                <CheckSquare className="text-blue-600 dark:text-blue-400" /> {t("step3Title")}
+              </h2>
+              <button type="button" onClick={agregarParticipante} className="px-4 py-2 rounded-xl bg-blue-600 dark:bg-blue-700 hover:bg-blue-700 dark:hover:bg-blue-600 text-white font-extrabold inline-flex items-center gap-2">
+                <Plus size={16} /> {t("add")}
+              </button>
             </div>
+
+            {participantes.length === 0 ? (
+              <div className="text-center py-10 text-slate-400 dark:text-gray-500 bg-slate-50 dark:bg-zinc-800/50 rounded-2xl border border-dashed border-slate-300 dark:border-zinc-700">
+                No hay participantes registrados. Agrega uno haciendo clic en el botón superior.
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {participantes.map((p) => (
+                  <div key={p.id} className="rounded-2xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800 p-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div>
+                        <label className="text-xs font-extrabold text-slate-600 dark:text-gray-400">Nombre</label>
+                        <input className="mt-1 w-full p-3 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-slate-900 dark:text-white" value={p.nombre} onChange={(e) => actualizarParticipante(p.id, "nombre", e.target.value)} />
+                      </div>
+                      <div>
+                        <label className="text-xs font-extrabold text-slate-600 dark:text-gray-400">Puesto / Cargo</label>
+                        <input className="mt-1 w-full p-3 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-slate-900 dark:text-white" value={p.puesto} onChange={(e) => actualizarParticipante(p.id, "puesto", e.target.value)} />
+                      </div>
+                      <div>
+                        <label className="text-xs font-extrabold text-slate-600 dark:text-gray-400">Empresa</label>
+                        <select className="mt-1 w-full p-3 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-slate-900 dark:text-white" value={p.empresa} onChange={(e) => actualizarParticipante(p.id, "empresa", e.target.value)}>
+                          <option value="SIG">SIG</option>
+                          <option value="Cliente">Cliente</option>
+                          <option value="Otro">Otro</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="flex justify-end mt-3">
+                      <button type="button" onClick={() => eliminarParticipante(p.id)} className="px-3 py-2 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 hover:bg-red-50 dark:hover:bg-red-900/30 text-red-700 dark:text-red-400 font-extrabold inline-flex items-center gap-2">
+                        <Trash2 size={16} /> Eliminar
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -1380,6 +1517,7 @@ export default function NuevoReporteTecnicoPage() {
                   firmaSIG={firmaSIG}
                   firmaCliente={firmaCliente}
                   clienteNombre={clientes.find((c: any) => String(c.id) === String(datos.cliente_id))?.nombre}
+                  tPDF={tPDF}
                 />
               </PDFViewerDynamic>
             </div>
