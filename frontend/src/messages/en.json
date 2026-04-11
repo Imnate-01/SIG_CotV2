@@ -638,5 +638,12 @@
         "clientResponsible": "Client Responsible",
         "footerPrefix": "Report generated on",
         "footerPage": "Page"
+    },
+    "Verificado": {
+        "title": "Verification Successful!",
+        "subtitle": "Your email address has been verified successfully.",
+        "description": "Your account is ready. You can now log in and start using the system.",
+        "btnLogin": "Go to Login",
+        "footer": "If you have any issues, please contact the support team."
     }
 }

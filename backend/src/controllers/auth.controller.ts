@@ -14,6 +14,9 @@ export const registrarUsuario = async (req: Request, res: Response) => {
     const { data: authData, error: authError } = await supabaseAnon.auth.signUp({
       email,
       password,
+      options: {
+        emailRedirectTo: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/verificado`
+      }
     });
 
     if (authError) return res.status(400).json({ message: authError.message });

@@ -638,5 +638,12 @@
         "clientResponsible": "Responsable Cliente",
         "footerPrefix": "Reporte generado el",
         "footerPage": "Pág."
+    },
+    "Verificado": {
+        "title": "¡Verificación Exitosa!",
+        "subtitle": "Tu correo electrónico ha sido verificado correctamente.",
+        "description": "Tu cuenta está lista. Ya puedes iniciar sesión y comenzar a utilizar el sistema.",
+        "btnLogin": "Ir a Iniciar Sesión",
+        "footer": "Si tienes algún problema, contacta al equipo de soporte."
     }
 }
