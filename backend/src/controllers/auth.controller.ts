@@ -22,6 +22,16 @@ export const registrarUsuario = async (req: Request, res: Response) => {
     if (authError) return res.status(400).json({ message: authError.message });
     if (!authData.user) return res.status(500).json({ message: "Error creando usuario Auth" });
 
+    // Detectar si el usuario ya existe en Supabase Auth
+    // Cuando email confirmation está activo y el email ya existe, Supabase devuelve
+    // un user con identities vacío (no crea uno nuevo por seguridad anti-enumeración)
+    const identities = authData.user.identities;
+    if (!identities || identities.length === 0) {
+      return res.status(409).json({ 
+        message: "Este correo ya está registrado. Si no has verificado tu email, revisa tu bandeja de entrada o spam." 
+      });
+    }
+
     // 2. Usamos cliente ADMIN para crear el perfil en la base de datos
     // (Necesario para saltarse RLS temporalmente y asegurar que se cree el perfil)
     const { error: profileError } = await supabaseAdmin
@@ -35,9 +45,19 @@ export const registrarUsuario = async (req: Request, res: Response) => {
       });
 
     if (profileError) {
-      // Si falla el perfil, intentamos limpiar el usuario de Auth para no dejar basura
+      // Detectar error de duplicado (el perfil ya existe)
+      if (profileError.code === '23505') {
+        return res.status(409).json({ message: "Este correo ya está registrado en el sistema." });
+      }
+      // Detectar error de foreign key (el usuario Auth no se creó realmente)
+      if (profileError.code === '23503') {
+        return res.status(409).json({ 
+          message: "Este correo ya está registrado. Revisa tu bandeja de entrada para verificar tu cuenta." 
+        });
+      }
+      // Si falla el perfil por otra razón, intentamos limpiar el usuario de Auth
       await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
-      return res.status(500).json({ message: "Error al crear perfil: " + profileError.message });
+      return res.status(500).json({ message: "Error al crear tu cuenta. Intenta de nuevo más tarde." });
     }
 
     // Retornamos token si la sesión se creó automáticamente
