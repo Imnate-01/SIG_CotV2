@@ -628,6 +628,32 @@ const NuevaCotizacionPage: React.FC = () => {
   const [tarifasCliente, setTarifasCliente] = useState<Record<string, number>>({});
   const clienteTieneContrato = Object.keys(tarifasCliente).length > 0;
 
+  // Auto-recalculate items when overrides change
+  useEffect(() => {
+    setItemsServicio(prev => {
+      let changed = false;
+      const newItems = prev.map(item => {
+        const tarifa = tarifasDisponibles.find((t) => String(t.id) === item.tarifaId);
+        if (!tarifa) return item;
+        
+        const precioUnitario = item.conContrato && tarifasCliente[item.tarifaId]
+          ? tarifasCliente[item.tarifaId]
+          : (item.conContrato ? tarifa.precio_con_contrato : tarifa.precio_sin_contrato);
+          
+        const expectedTotal = tarifa.requiere_desglose
+          ? precioUnitario * item.cantidad
+          : precioUnitario * item.ingenieros * item.cantidad;
+
+        if (item.total !== expectedTotal) {
+          changed = true;
+          return { ...item, total: expectedTotal };
+        }
+        return item;
+      });
+      return changed ? newItems : prev;
+    });
+  }, [tarifasCliente, tarifasDisponibles]);
+
   useEffect(() => {
     const fetchClientes = async () => {
       try {
@@ -1363,7 +1389,12 @@ const NuevaCotizacionPage: React.FC = () => {
                       <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t("type")}</span>
                       <label className="inline-flex items-center gap-1 text-sm cursor-pointer text-gray-700 dark:text-gray-300"><input type="radio" className="accent-blue-600" checked={item.conContrato} onChange={() => actualizarLineaServicio(item.id, "conContrato", true)} /> {t("withContract")}</label>
                       <label className="inline-flex items-center gap-1 text-sm cursor-pointer text-gray-700 dark:text-gray-300"><input type="radio" className="accent-blue-600" checked={!item.conContrato} onChange={() => actualizarLineaServicio(item.id, "conContrato", false)} /> {t("withoutContract")}</label>
-                      {tarifa && (<span className="text-xs text-gray-500 dark:text-gray-400 ml-2 hidden sm:inline">(${(item.conContrato ? tarifa.precio_con_contrato : tarifa.precio_sin_contrato).toFixed(2)} / {tarifa.unidad})</span>)}
+                      {tarifa && (
+                        <span className="text-xs text-gray-500 dark:text-gray-400 ml-2 hidden sm:inline">
+                          (${(item.conContrato && tarifasCliente[tarifa.id] ? tarifasCliente[tarifa.id] : (item.conContrato ? tarifa.precio_con_contrato : tarifa.precio_sin_contrato)).toFixed(2)} / {tarifa.unidad})
+                          {item.conContrato && tarifasCliente[tarifa.id] && <span className="ml-1 text-blue-500 font-bold">(Tarifa Especial)</span>}
+                        </span>
+                      )}
                     </div>
                     <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
                       <div className="flex flex-col items-end"><span className="text-xs text-gray-500 dark:text-gray-400">{t("lineTotal")}</span><span className="text-xl font-bold text-gray-800 dark:text-white">${item.total.toFixed(2)} USD</span></div>

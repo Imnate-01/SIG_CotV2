@@ -446,6 +446,32 @@ const EditarCotizacionPage: React.FC = () => {
     const [tarifasCliente, setTarifasCliente] = useState<Record<string, number>>({});
     const clienteTieneContrato = Object.keys(tarifasCliente).length > 0;
 
+    // Auto-recalculate items when overrides change
+    useEffect(() => {
+        setItemsServicio(prev => {
+            let changed = false;
+            const newItems = prev.map(item => {
+                const tarifa = tarifasDisponibles.find((t) => String(t.id) === item.tarifaId);
+                if (!tarifa) return item;
+                
+                const precioUnitario = item.conContrato && tarifasCliente[item.tarifaId]
+                    ? tarifasCliente[item.tarifaId]
+                    : (item.conContrato ? tarifa.precio_con_contrato : tarifa.precio_sin_contrato);
+                    
+                const expectedTotal = tarifa.requiere_desglose
+                    ? precioUnitario * item.cantidad
+                    : precioUnitario * item.ingenieros * item.cantidad;
+
+                if (item.total !== expectedTotal) {
+                    changed = true;
+                    return { ...item, total: expectedTotal };
+                }
+                return item;
+            });
+            return changed ? newItems : prev;
+        });
+    }, [tarifasCliente, tarifasDisponibles]);
+
     // FETCH DATA
     useEffect(() => {
         const loadAll = async () => {
