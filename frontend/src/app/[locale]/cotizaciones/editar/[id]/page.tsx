@@ -447,15 +447,21 @@ const EditarCotizacionPage: React.FC = () => {
         const loadAll = async () => {
             try {
                 // 1. Cargar Catálogos
-                const [resClientes, resUsuarios, resServicios] = await Promise.all([
+                const [resClientes, resUsuarios] = await Promise.all([
                     api.get('/clientes'),
                     api.get('/usuarios'),
-                    api.get('/servicios')
                 ]);
 
                 setClientesDisponibles(resClientes.data.data || []);
                 setUsuariosRegistrados(resUsuarios.data.data || []);
 
+                // 2. Cargar Cotización primero para saber la entidad/region
+                const { data: cotData } = await api.get(`/cotizaciones/${id}`);
+                const cot = cotData.data;
+                const cotRegion = cot.condiciones?.entidad || 'MX';
+
+                // 3. Cargar servicios filtrados por region de la cotización
+                const resServicios = await api.get(`/servicios?region=${cotRegion}`);
                 const listaServicios = (resServicios.data.data || []).map((s: any) => ({
                     id: s.id,
                     concepto: s.concepto,
@@ -463,13 +469,9 @@ const EditarCotizacionPage: React.FC = () => {
                     precio_sin_contrato: Number(s.precio_sin_contrato),
                     precio_con_contrato: Number(s.precio_con_contrato),
                     moneda: s.moneda,
-                    requiere_desglose: s.concepto.toLowerCase().includes('viaje')
+                    requiere_desglose: s.concepto.toLowerCase().includes('viaje') || s.concepto.toLowerCase().includes('travel')
                 }));
                 setTarifasDisponibles(listaServicios);
-
-                // 2. Cargar Cotización
-                const { data: cotData } = await api.get(`/cotizaciones/${id}`);
-                const cot = cotData.data;
 
                 if (cot.estado !== 'borrador') {
                     toast.error("Solo se pueden editar cotizaciones en estado borrador");
@@ -567,6 +569,27 @@ const EditarCotizacionPage: React.FC = () => {
         if (id) loadAll();
     }, [id, router]);
 
+
+    // Re-fetch rates filtered by region when entity changes
+    const fetchTarifasByRegion = async (region: string) => {
+        try {
+            const { data } = await api.get(`/servicios?region=${region}`);
+            const lista: Tarifa[] = (Array.isArray(data) ? data : data.data || []).map((s: any) => ({
+                id: s.id,
+                concepto: s.concepto,
+                unidad: s.unidad,
+                precio_sin_contrato: Number(s.precio_sin_contrato),
+                precio_con_contrato: Number(s.precio_con_contrato),
+                moneda: s.moneda,
+                requiere_desglose: s.concepto.toLowerCase().includes('viaje') || s.concepto.toLowerCase().includes('travel')
+            }));
+            setTarifasDisponibles(lista);
+            // Reset service items since rates changed
+            setItemsServicio([{ id: 1, tarifaId: "", ingenieros: 1, cantidad: 1, conContrato: true, total: 0, detalles: "", desglose: [{ uid: 'init_1', nombre: '', horas: 0 }] }]);
+        } catch (error) {
+            console.error("Error cargando servicios por región:", error);
+        }
+    };
 
     // HANDLERS (Same as Create, but calling update)
 
@@ -752,13 +775,15 @@ const EditarCotizacionPage: React.FC = () => {
                             <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Entidad Emisora</label>
                             <select value={formData.condiciones.entidad || 'MX'} onChange={(e) => {
                                 const val = e.target.value as "MX" | "US";
-                                const proveedorUS = { nombre: "SIG US Inc.", direccion: "123 Main St", colonia: "Suite 100", ciudad: "Chicago, IL", cp: "60007", rfc: "" };
+                                const proveedorUS = { nombre: "SIG Combibloc Inc.", direccion: "2501 Seaport Drive - Suite 100", colonia: "", ciudad: "Chester, PA 19013", cp: "19013", rfc: "" };
                                 const proveedorMX = { nombre: "SIG Combibloc México, S.A. de C.V.", direccion: "Av. Emilio Castelar No. 75", colonia: "Polanco IV Sección", ciudad: "Ciudad de México", cp: "11550", rfc: "" };
                                 setFormData(prev => ({
                                     ...prev,
                                     condiciones: { ...prev.condiciones, entidad: val, moneda: val === "US" ? "USD" : prev.condiciones.moneda },
                                     proveedor: val === "US" ? proveedorUS : proveedorMX
                                 }));
+                                // Re-fetch tarifas for the selected region
+                                fetchTarifasByRegion(val);
                             }} className="premium-select w-full px-4 py-3 border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                 <option value="MX">SIG MX (México)</option>
                                 <option value="US">SIG US (Estados Unidos)</option>

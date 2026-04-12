@@ -11,11 +11,19 @@ export class ServiciosController {
 
       const supabaseUser = createClientForUser(token);
 
-      const { data, error } = await supabaseUser
+      // Filtrar por region si viene como query param
+      const region = req.query.region as string | undefined;
+      let query = supabaseUser
         .from('servicios')
         .select('*')
-        .eq('activo', true) // Solo traemos los vigentes
-        .order('id')
+        .eq('activo', true)
+        .order('id');
+
+      if (region) {
+        query = query.eq('region', region.toUpperCase());
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error
       res.json({ success: true, data })
@@ -31,12 +39,12 @@ export class ServiciosController {
       if (!token) return res.status(401).json({ success: false, error: "No autorizado" });
 
       const supabaseUser = createClientForUser(token);
-      const { concepto, unidad, precio_sin_contrato, precio_con_contrato, moneda, categoria } = req.body
+      const { concepto, unidad, precio_sin_contrato, precio_con_contrato, moneda, categoria, region } = req.body
 
       const { data, error } = await supabaseUser
         .from('servicios')
         .insert({
-          concepto, unidad, precio_sin_contrato, precio_con_contrato, moneda, categoria
+          concepto, unidad, precio_sin_contrato, precio_con_contrato, moneda, categoria, region: region || 'MX'
         })
         .select()
         .single()

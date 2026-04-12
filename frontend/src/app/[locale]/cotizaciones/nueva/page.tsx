@@ -647,7 +647,7 @@ const NuevaCotizacionPage: React.FC = () => {
 
     const fetchServicios = async () => {
       try {
-        const { data } = await api.get('/servicios');
+        const { data } = await api.get('/servicios?region=MX');
         const lista: Tarifa[] = (Array.isArray(data) ? data : data.data || []).map((s: any) => ({
           id: s.id,
           concepto: s.concepto,
@@ -655,7 +655,7 @@ const NuevaCotizacionPage: React.FC = () => {
           precio_sin_contrato: Number(s.precio_sin_contrato),
           precio_con_contrato: Number(s.precio_con_contrato),
           moneda: s.moneda,
-          requiere_desglose: s.concepto.toLowerCase().includes('viaje'),
+          requiere_desglose: s.concepto.toLowerCase().includes('viaje') || s.concepto.toLowerCase().includes('travel'),
           categoria: s.categoria || 'Servicio Técnico'
         }));
         setTarifasDisponibles(lista);
@@ -668,6 +668,28 @@ const NuevaCotizacionPage: React.FC = () => {
     fetchUsuarios();
     fetchServicios();
   }, []);
+
+  // Re-fetch rates filtered by region when entity changes
+  const fetchTarifasByRegion = async (region: string) => {
+    try {
+      const { data } = await api.get(`/servicios?region=${region}`);
+      const lista: Tarifa[] = (Array.isArray(data) ? data : data.data || []).map((s: any) => ({
+        id: s.id,
+        concepto: s.concepto,
+        unidad: s.unidad,
+        precio_sin_contrato: Number(s.precio_sin_contrato),
+        precio_con_contrato: Number(s.precio_con_contrato),
+        moneda: s.moneda,
+        requiere_desglose: s.concepto.toLowerCase().includes('viaje') || s.concepto.toLowerCase().includes('travel'),
+        categoria: s.categoria || 'Servicio Técnico'
+      }));
+      setTarifasDisponibles(lista);
+      // Reset service items since rates changed
+      setItemsServicio([{ id: 1, tarifaId: "", ingenieros: 1, cantidad: 1, conContrato: true, total: 0, detalles: "", desglose: [{ uid: 'init_1', nombre: '', horas: 0 }] }]);
+    } catch (error) {
+      console.error("Error cargando servicios por región:", error);
+    }
+  };
 
   const handleInputChange = <K extends keyof CotizacionFormData>(seccion: K, campo: string, valor: any) => {
     setFormData((prev) => ({
@@ -1119,13 +1141,15 @@ const NuevaCotizacionPage: React.FC = () => {
               value={formData.condiciones.entidad || 'MX'} 
               onChange={(e) => {
                 const val = e.target.value as "MX" | "US";
-                const proveedorUS = { nombre: "SIG US Inc.", direccion: "123 Main St", colonia: "Suite 100", ciudad: "Chicago, IL", cp: "60007", rfc: "" };
+                const proveedorUS = { nombre: "SIG Combibloc Inc.", direccion: "2501 Seaport Drive - Suite 100", colonia: "", ciudad: "Chester, PA 19013", cp: "19013", rfc: "" };
                 const proveedorMX = { nombre: "SIG Combibloc México, S.A. de C.V.", direccion: "Av. Emilio Castelar No. 75", colonia: "Polanco IV Sección", ciudad: "Ciudad de México", cp: "11550", rfc: "" };
                 setFormData(prev => ({
                   ...prev,
                   condiciones: { ...prev.condiciones, entidad: val, moneda: val === "US" ? "USD" : prev.condiciones.moneda },
                   proveedor: val === "US" ? proveedorUS : proveedorMX
                 }));
+                // Re-fetch tarifas for the selected region
+                fetchTarifasByRegion(val);
               }} 
               className="premium-select w-full md:w-1/2 lg:w-1/3 px-4 py-3 border-2 border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded-xl text-gray-900 dark:text-white focus:border-amber-500 focus:outline-none transition-colors"
             >

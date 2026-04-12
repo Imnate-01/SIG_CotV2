@@ -13,6 +13,7 @@ interface Servicio {
   precio_con_contrato: number;
   moneda: string;
   categoria: string;
+  region: string;
 }
 
 export default function ServiciosPage() {
@@ -22,6 +23,7 @@ export default function ServiciosPage() {
   const [servicios, setServicios] = useState<Servicio[]>([]);
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState("");
+  const [regionTab, setRegionTab] = useState<"MX" | "US">("MX");
 
   const [modalAbierto, setModalAbierto] = useState(false);
   const [servicioEditando, setServicioEditando] = useState<Servicio | null>(null);
@@ -32,18 +34,20 @@ export default function ServiciosPage() {
     precio_sin_contrato: 0,
     precio_con_contrato: 0,
     moneda: "USD",
-    categoria: "Servicio Técnico"
+    categoria: "Servicio Técnico",
+    region: "MX" as string
   });
 
-  const cargarServicios = async () => {
+  const cargarServicios = async (region?: string) => {
     try {
-      const { data } = await api.get("/servicios");
+      setLoading(true);
+      const { data } = await api.get(`/servicios${region ? `?region=${region}` : ''}`);
       setServicios(data.data);
     } catch (error) { console.error(error); }
     finally { setLoading(false); }
   };
 
-  useEffect(() => { cargarServicios(); }, []);
+  useEffect(() => { cargarServicios(regionTab); }, [regionTab]);
 
   const abrirModal = (servicio?: Servicio) => {
     if (servicio) {
@@ -54,11 +58,12 @@ export default function ServiciosPage() {
         precio_sin_contrato: servicio.precio_sin_contrato,
         precio_con_contrato: servicio.precio_con_contrato,
         moneda: servicio.moneda,
-        categoria: servicio.categoria || "Servicio Técnico"
+        categoria: servicio.categoria || "Servicio Técnico",
+        region: servicio.region || "MX"
       });
     } else {
       setServicioEditando(null);
-      setFormData({ concepto: "", unidad: "hora", precio_sin_contrato: 0, precio_con_contrato: 0, moneda: "USD", categoria: "Servicio Técnico" });
+      setFormData({ concepto: "", unidad: "hora", precio_sin_contrato: 0, precio_con_contrato: 0, moneda: "USD", categoria: "Servicio Técnico", region: regionTab });
     }
     setModalAbierto(true);
   };
@@ -72,7 +77,7 @@ export default function ServiciosPage() {
         await api.post("/servicios", formData);
       }
       setModalAbierto(false);
-      cargarServicios();
+      cargarServicios(regionTab);
       toast.success(t("successSaved"));
     } catch (error) { toast.error(t("errorSave")); }
   };
@@ -81,7 +86,7 @@ export default function ServiciosPage() {
     if (!confirm(t("confirmDelete"))) return;
     try {
       await api.delete(`/servicios/${id}`);
-      cargarServicios();
+      cargarServicios(regionTab);
     } catch (error) { toast.error(t("errorDelete")); }
   };
 
@@ -107,6 +112,24 @@ export default function ServiciosPage() {
           </button>
         </div>
 
+        {/* Tabs MX / US */}
+        <div className="flex gap-2 mb-6">
+          {(["MX", "US"] as const).map((r) => (
+            <button
+              key={r}
+              onClick={() => setRegionTab(r)}
+              className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center gap-2 ${
+                regionTab === r
+                  ? "bg-indigo-600 dark:bg-indigo-700 text-white shadow-lg shadow-indigo-200 dark:shadow-indigo-900/30"
+                  : "bg-white dark:bg-zinc-900 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-zinc-700 hover:border-indigo-300 dark:hover:border-indigo-600"
+              }`}
+            >
+              <span>{r === "MX" ? "🇲🇽" : "🇺🇸"}</span>
+              {r === "MX" ? "SIG México" : "SIG USA"}
+            </button>
+          ))}
+        </div>
+
         <div className="bg-white dark:bg-zinc-900 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-zinc-800 mb-6 flex items-center gap-3">
           <Search className="text-gray-400 dark:text-gray-500" />
           <input
@@ -126,10 +149,15 @@ export default function ServiciosPage() {
 
               <div className="relative z-10">
                 <div className="flex justify-between items-start mb-2">
-                  <span className="bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 text-xs font-bold px-2 py-1 rounded uppercase flex items-center gap-1">
-                    {servicio.unidad === 'hora' ? <Clock size={12} /> : <Package size={12} />}
-                    {servicio.unidad}
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 text-xs font-bold px-2 py-1 rounded uppercase flex items-center gap-1">
+                      {servicio.unidad === 'hora' ? <Clock size={12} /> : <Package size={12} />}
+                      {servicio.unidad}
+                    </span>
+                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${servicio.region === 'US' ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300' : 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300'}`}>
+                      {servicio.region === 'US' ? '🇺🇸' : '🇲🇽'}
+                    </span>
+                  </div>
                   <div className="flex gap-2">
                     <button onClick={() => abrirModal(servicio)} className="text-gray-400 hover:text-indigo-600 dark:text-gray-500 dark:hover:text-indigo-400"><Edit size={16} /></button>
                     <button onClick={() => handleEliminar(servicio.id)} className="text-gray-400 hover:text-red-600 dark:text-gray-500 dark:hover:text-red-400"><Trash2 size={16} /></button>
@@ -182,6 +210,15 @@ export default function ServiciosPage() {
                 <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">{t("concept")}</label>
                 <input required className="w-full p-3 border border-gray-200 dark:border-zinc-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-zinc-800 text-gray-900 dark:text-white transition-all dark:placeholder-gray-500"
                   value={formData.concepto} onChange={e => setFormData({ ...formData, concepto: e.target.value })} />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Región</label>
+                <select className="w-full p-3 border border-gray-200 dark:border-zinc-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-zinc-800 text-gray-900 dark:text-white transition-all appearance-none mb-4"
+                  value={formData.region} onChange={e => setFormData({ ...formData, region: e.target.value })}>
+                  <option value="MX">🇲🇽 SIG México</option>
+                  <option value="US">🇺🇸 SIG USA</option>
+                </select>
               </div>
 
               <div>
