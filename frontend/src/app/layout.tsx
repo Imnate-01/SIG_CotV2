@@ -9,11 +9,6 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "Sistema de Cotizaciones SIG",
   description: "Plataforma de gestión de servicios y materiales",
-  icons: {
-    icon: [
-      { url: '/SIG_Holding_logo.svg', type: 'image/svg+xml' }
-    ]
-  }
 };
 
 export default function RootLayout({
@@ -23,6 +18,9 @@ export default function RootLayout({
 }>) {
   return (
     <html suppressHydrationWarning>
+      <head>
+        <link rel="icon" href="/SIG_Holding_logo.svg" type="image/svg+xml" sizes="any" />
+      </head>
       <body className={inter.className}>
         <ThemeProvider defaultTheme="system">
           {children}
