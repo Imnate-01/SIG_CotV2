@@ -18,9 +18,6 @@ export default function RootLayout({
 }>) {
   return (
     <html suppressHydrationWarning>
-      <head>
-        <link rel="icon" href="/SIG_Holding_logo.svg" type="image/svg+xml" sizes="any" />
-      </head>
       <body className={inter.className}>
         <ThemeProvider defaultTheme="system">
           {children}
