@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   description: "Plataforma de gestión de servicios y materiales",
   icons: {
     icon: [
-      { url: '/icon.svg', type: 'image/svg+xml' }
+      { url: '/SIG_Holding_logo.svg', type: 'image/svg+xml' }
     ]
   }
 };
