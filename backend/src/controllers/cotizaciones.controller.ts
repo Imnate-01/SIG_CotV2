@@ -36,7 +36,8 @@ export class CotizacionesController {
         estado = 'borrador',
         tipo_servicio = 'TM',
         proveedor,
-        descripcion // ← AGREGAR
+        descripcion, // ← AGREGAR
+        datos_forma
       } = req.body
 
       // Sanitizar descripción
@@ -118,7 +119,8 @@ Observaciones: ${condiciones?.observaciones || ''}
           descripcion: descripcionFinal, // Insertar descripción sanitizada
           estatus_po: 'pendiente',
           // agregamos esta línea para guardar el objeto condiciones completo
-          condiciones: condiciones || {}
+          condiciones: condiciones || {},
+          datos_forma: datos_forma || null
         })
         .select()
         .single()
@@ -316,7 +318,8 @@ Observaciones: ${condiciones?.observaciones || ''}
         // estado, // No permitimos cambiar estado aquí, solo datos
         tipo_servicio = 'TM',
         descripcion = null, // Nuevo campo
-        proveedor
+        proveedor,
+        datos_forma
       } = req.body
 
       // D. Lógica de Cliente (Igual que Create)
@@ -383,7 +386,8 @@ Observaciones: ${condiciones?.observaciones || ''}
           notas: notas,
           tipo_servicio: tipo_servicio,
           descripcion: descripcion, // Actualizar descripción
-          condiciones: condiciones || {}
+          condiciones: condiciones || {},
+          datos_forma: datos_forma || null
         })
         .eq('id', id);
 

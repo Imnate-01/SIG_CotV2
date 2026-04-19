@@ -1,8 +1,11 @@
 "use client";
 
-import React from "react";
+import React, { useRef } from "react";
 import { Link } from "@/i18n/routing";
 import { useTranslations } from "next-intl";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import {
   ArrowRight,
   CheckCircle2,
@@ -14,6 +17,10 @@ import {
   BarChart3,
   Sparkles,
 } from "lucide-react";
+
+if (typeof window !== "undefined") {
+  gsap.registerPlugin(useGSAP, ScrollTrigger);
+}
 
 function FeatureCard({
   icon: Icon,
@@ -34,7 +41,7 @@ function FeatureCard({
   };
 
   return (
-    <div className="group rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 shadow-sm hover:shadow-md transition">
+    <div className="feature-card group rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 shadow-sm hover:shadow-md transition">
       <div className="flex items-start gap-4">
         <div
           className={`h-12 w-12 rounded-2xl border flex items-center justify-center ${tones[tone]}`}
@@ -62,7 +69,7 @@ function Step({
   desc: string;
 }) {
   return (
-    <div className="rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 shadow-sm">
+    <div className="step-card rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 shadow-sm">
       <div className="flex items-start gap-4">
         <div className="h-10 w-10 rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 flex items-center justify-center font-extrabold">
           {n}
@@ -81,9 +88,63 @@ function Step({
 export default function LandingPage() {
   const t = useTranslations("Landing");
   const tCommon = useTranslations("Common");
+  const container = useRef<HTMLDivElement>(null);
+
+  useGSAP(() => {
+    // Hero Text animation
+    gsap.fromTo(".hero-text", 
+      { y: 30, opacity: 0 },
+      { y: 0, opacity: 1, duration: 0.8, stagger: 0.15, ease: "power3.out", delay: 0.1 }
+    );
+
+    // Hero Mockup animation
+    gsap.fromTo(".hero-mockup", 
+      { x: 40, opacity: 0 },
+      { x: 0, opacity: 1, duration: 1, ease: "power3.out", delay: 0.3 }
+    );
+
+    // Features Section
+    gsap.fromTo(".feature-card", 
+      { y: 40, opacity: 0 },
+      {
+        y: 0, opacity: 1, 
+        duration: 0.6, stagger: 0.1, ease: "power2.out",
+        scrollTrigger: {
+          trigger: ".features-section",
+          start: "top 80%",
+        }
+      }
+    );
+
+    // How It Works Section
+    gsap.fromTo(".step-card", 
+      { y: 40, opacity: 0 },
+      {
+        y: 0, opacity: 1, 
+        duration: 0.6, stagger: 0.15, ease: "power2.out",
+        scrollTrigger: {
+          trigger: ".steps-section",
+          start: "top 80%",
+        }
+      }
+    );
+
+    // CTA Section
+    gsap.fromTo(".cta-content", 
+      { scale: 0.95, opacity: 0, y: 20 },
+      {
+        scale: 1, opacity: 1, y: 0, 
+        duration: 0.8, ease: "back.out(1.5)",
+        scrollTrigger: {
+          trigger: ".cta-section",
+          start: "top 80%",
+        }
+      }
+    );
+  }, { scope: container });
 
   return (
-    <div className="min-h-screen bg-white dark:bg-zinc-950 text-slate-900 dark:text-gray-100 selection:bg-blue-100 dark:selection:bg-blue-900">
+    <div ref={container} className="min-h-screen bg-white dark:bg-zinc-950 text-slate-900 dark:text-gray-100 selection:bg-blue-100 dark:selection:bg-blue-900 overflow-hidden">
       {/* NAVBAR */}
       <nav className="fixed top-0 w-full z-50 border-b border-slate-100 dark:border-zinc-800 bg-white/75 dark:bg-zinc-950/75 backdrop-blur-md">
         <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6">
@@ -119,7 +180,7 @@ export default function LandingPage() {
       </nav>
 
       {/* HERO */}
-      <header className="relative overflow-hidden pt-32 pb-16 lg:pt-44 lg:pb-24">
+      <header className="relative pt-32 pb-16 lg:pt-44 lg:pb-24">
         {/* background glow */}
         <div className="absolute -top-40 left-1/2 -translate-x-1/2 h-[520px] w-[1100px] rounded-full bg-blue-50 dark:bg-blue-900/20 blur-3xl opacity-70 -z-10" />
         <div className="absolute -bottom-40 right-0 h-[520px] w-[520px] rounded-full bg-indigo-50 dark:bg-indigo-900/20 blur-3xl opacity-70 -z-10" />
@@ -128,12 +189,12 @@ export default function LandingPage() {
           <div className="grid items-center gap-12 lg:grid-cols-2">
             {/* Copy */}
             <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3 py-1 text-xs font-extrabold text-slate-600 dark:text-gray-300">
+              <div className="hero-text inline-flex items-center gap-2 rounded-full border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3 py-1 text-xs font-extrabold text-slate-600 dark:text-gray-300 shadow-[0px_0px_20px_0px_rgba(59,130,246,0.15)] opacity-0">
                 <Sparkles size={14} className="text-blue-600 dark:text-blue-400" />
                 {t("hero.badge")}
               </div>
 
-              <h1 className="mt-6 text-5xl md:text-6xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+              <h1 className="hero-text mt-6 text-5xl md:text-6xl font-extrabold tracking-tight text-slate-900 dark:text-white opacity-0">
                 {t("hero.titleStart")}{" "}
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400">
                   {t("hero.titleHighlight")}
@@ -141,11 +202,11 @@ export default function LandingPage() {
                 {t("hero.titleEnd")}
               </h1>
 
-              <p className="mt-5 text-lg text-slate-600 dark:text-gray-400 leading-relaxed max-w-xl">
+              <p className="hero-text mt-5 text-lg text-slate-600 dark:text-gray-400 leading-relaxed max-w-xl opacity-0">
                 {t("hero.description")}
               </p>
 
-              <div className="mt-8 flex flex-col sm:flex-row gap-3">
+              <div className="hero-text mt-8 flex flex-col sm:flex-row gap-3 opacity-0">
                 <Link
                   href="/login"
                   className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-900 dark:bg-white px-6 py-3 font-extrabold text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-gray-100 transition shadow-sm"
@@ -160,7 +221,7 @@ export default function LandingPage() {
                 </Link>
               </div>
 
-              <div className="mt-6 flex flex-wrap gap-3 text-sm text-slate-600 dark:text-gray-400">
+              <div className="hero-text mt-6 flex flex-wrap gap-3 text-sm text-slate-600 dark:text-gray-400 opacity-0">
                 <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3 py-1">
                   <CheckCircle2 size={16} className="text-emerald-600 dark:text-emerald-400" />
                   {t("hero.badge1")}
@@ -177,7 +238,7 @@ export default function LandingPage() {
             </div>
 
             {/* Visual mock */}
-            <div className="rounded-3xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm overflow-hidden">
+            <div className="hero-mockup rounded-3xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xl overflow-hidden opacity-0">
               <div className="border-b border-slate-100 dark:border-zinc-800 p-5 flex items-center justify-between">
                 <div className="font-extrabold text-slate-900 dark:text-white">{t("mockup.title")}</div>
                 <div className="text-xs font-bold text-slate-500 dark:text-gray-500">
@@ -238,7 +299,7 @@ export default function LandingPage() {
       </header>
 
       {/* FEATURES */}
-      <section className="py-16 bg-slate-50 dark:bg-zinc-900 border-t border-slate-100 dark:border-zinc-800">
+      <section className="features-section py-16 bg-slate-50 dark:bg-zinc-900 border-t border-slate-100 dark:border-zinc-800">
         <div className="mx-auto max-w-7xl px-6">
           <div className="max-w-2xl">
             <h2 className="text-3xl font-extrabold tracking-tight dark:text-white">
@@ -291,7 +352,7 @@ export default function LandingPage() {
       </section>
 
       {/* HOW IT WORKS */}
-      <section className="py-16 bg-white dark:bg-zinc-950">
+      <section className="steps-section py-16 bg-white dark:bg-zinc-950">
         <div className="mx-auto max-w-7xl px-6">
           <div className="max-w-2xl">
             <h2 className="text-3xl font-extrabold tracking-tight dark:text-white">
@@ -323,9 +384,9 @@ export default function LandingPage() {
       </section>
 
       {/* FINAL CTA */}
-      <section className="py-20 bg-slate-900 dark:bg-black text-white relative overflow-hidden">
+      <section className="cta-section py-20 bg-slate-900 dark:bg-black text-white relative">
         <div className="absolute -top-24 left-0 h-[420px] w-[420px] rounded-full bg-blue-600 blur-[120px] opacity-20" />
-        <div className="mx-auto max-w-7xl px-6 text-center relative">
+        <div className="cta-content mx-auto max-w-7xl px-6 text-center relative opacity-0">
           <h2 className="text-4xl font-extrabold tracking-tight">
             {t("cta.title")}
           </h2>

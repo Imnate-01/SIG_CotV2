@@ -77,20 +77,50 @@ const CotizacionDocument = ({ data }: { data: any }) => {
   const items = data.cotizacion_items || [];
   const condiciones = data.condiciones || {};
 
-  // Generar estilos dinámicos según la cantidad de items
-  const pdfStyles = buildPdfStyles(items.length);
+  // Extraer información estructurada si existe, si no hacer fallback
+  const datosForma = data.datos_forma || null;
 
-  // Determinar puesto del usuario - Eduardo tiene cargo especial
-  const puestoUsuario = (usuario.nombre || "").toLowerCase().includes("eduardo")
-    ? "Back Office Manager"
-    : (usuario.puesto || "Service Sales");
-
-  const proveedor = {
+  const proveedor = datosForma?.proveedor || {
     nombre: "SIG Combibloc México, S.A. de C.V.",
     direccion: "Av. Emilio Castelar No. 75",
     ciudad: "Ciudad de México, CP 11550",
     rfc: "SCM..."
   };
+
+  const facturarA = datosForma?.facturarA || {
+    nombre: cliente.empresa || cliente.nombre || "",
+    direccion: cliente.direccion || "",
+    ciudad: `${cliente.ciudad || ""} ${cliente.cp ? `, CP ${cliente.cp}` : ''}`.trim(),
+    rfc: cliente.rfc || "No registrado"
+  };
+
+  const shipTo = datosForma?.shipToMismoQueFacturar 
+    ? (datosForma?.facturarA || facturarA) 
+    : (datosForma?.shipTo || {
+        nombre: cliente.empresa || cliente.nombre || "",
+        direccion: cliente.direccion || "",
+        ciudad: cliente.ciudad || ""
+      });
+
+  const contactoPrincipal = datosForma?.contactoPrincipal || {
+    nombre: usuario.nombre || "Ejecutivo de Cuenta",
+    email: usuario.email,
+    telefono: usuario.telefono
+  };
+
+  const contactoSecundario = datosForma?.contactoSecundario || {
+    nombre: cliente.nombre,
+    email: cliente.correo,
+    telefono: cliente.telefono
+  };
+
+  // Generar estilos dinámicos según la cantidad de items
+  const pdfStyles = buildPdfStyles(items.length);
+
+  // Determinar puesto del usuario - Eduardo tiene cargo especial
+  const puestoUsuario = (contactoPrincipal.nombre || "").toLowerCase().includes("eduardo")
+    ? "Back Office Manager"
+    : (usuario.puesto || "Service Sales");
 
   const subtotal = items.reduce((sum: number, i: any) => sum + Number(i.subtotal || i.total), 0);
   const totalGuardado = Number(data.total);
@@ -126,14 +156,14 @@ const CotizacionDocument = ({ data }: { data: any }) => {
             <Text style={pdfStyles.sectionTitle}>PROVEEDOR:</Text>
             <Text style={[pdfStyles.value, { fontWeight: "bold" }]}>{proveedor.nombre}</Text>
             <Text style={pdfStyles.value}>{proveedor.direccion}</Text>
-            <Text style={pdfStyles.value}>{proveedor.ciudad}</Text>
+            <Text style={pdfStyles.value}>{proveedor.ciudad || ""} {proveedor.cp ? `, CP ${proveedor.cp}` : ''}</Text>
           </View>
           <View style={pdfStyles.column}>
             <Text style={pdfStyles.sectionTitle}>FACTURAR A (SOLD TO):</Text>
-            <Text style={[pdfStyles.value, { fontWeight: "bold" }]}>{cliente.empresa || cliente.nombre}</Text>
-            <Text style={pdfStyles.value}>{cliente.direccion}</Text>
-            <Text style={pdfStyles.value}>{cliente.ciudad} {cliente.cp ? `, CP ${cliente.cp}` : ''}</Text>
-            <Text style={pdfStyles.value}>RFC: {cliente.rfc || "No registrado"}</Text>
+            <Text style={[pdfStyles.value, { fontWeight: "bold" }]}>{facturarA.nombre}</Text>
+            <Text style={pdfStyles.value}>{facturarA.direccion}</Text>
+            <Text style={pdfStyles.value}>{facturarA.ciudad || ""} {datosForma?.facturarA?.cp ? `, CP ${datosForma.facturarA.cp}` : ''}</Text>
+            {facturarA.rfc && <Text style={pdfStyles.value}>RFC: {facturarA.rfc}</Text>}
           </View>
         </View>
 
@@ -141,9 +171,9 @@ const CotizacionDocument = ({ data }: { data: any }) => {
         <View style={pdfStyles.row}>
           <View style={pdfStyles.column}>
             <Text style={pdfStyles.sectionTitle}>LUGAR DEL SERVICIO (SHIP TO):</Text>
-            <Text style={[pdfStyles.value, { fontWeight: "bold" }]}>{cliente.empresa || cliente.nombre}</Text>
-            <Text style={pdfStyles.value}>{cliente.direccion}</Text>
-            <Text style={pdfStyles.value}>{cliente.ciudad}</Text>
+            <Text style={[pdfStyles.value, { fontWeight: "bold" }]}>{shipTo.nombre}</Text>
+            <Text style={pdfStyles.value}>{shipTo.direccion}</Text>
+            <Text style={pdfStyles.value}>{shipTo.ciudad || ""} {datosForma?.shipTo?.cp ? `, CP ${datosForma.shipTo.cp}` : ''}</Text>
           </View>
         </View>
 
@@ -151,15 +181,15 @@ const CotizacionDocument = ({ data }: { data: any }) => {
         <View style={pdfStyles.row}>
           <View style={pdfStyles.column}>
             <Text style={pdfStyles.label}>De (Ejecutivo):</Text>
-            <Text style={[pdfStyles.value, { fontWeight: "bold" }]}>{usuario.nombre || "Ejecutivo de Cuenta"}</Text>
-            <Text style={pdfStyles.value}>{usuario.email}</Text>
-            <Text style={pdfStyles.value}>{usuario.telefono}</Text>
+            <Text style={[pdfStyles.value, { fontWeight: "bold" }]}>{contactoPrincipal.nombre}</Text>
+            <Text style={pdfStyles.value}>{contactoPrincipal.email}</Text>
+            <Text style={pdfStyles.value}>{contactoPrincipal.telefono}</Text>
           </View>
           <View style={pdfStyles.column}>
             <Text style={pdfStyles.label}>Contacto Cliente:</Text>
-            <Text style={[pdfStyles.value, { fontWeight: "bold" }]}>{cliente.nombre}</Text>
-            <Text style={pdfStyles.value}>{cliente.correo}</Text>
-            <Text style={pdfStyles.value}>{cliente.telefono}</Text>
+            <Text style={[pdfStyles.value, { fontWeight: "bold" }]}>{contactoSecundario.nombre}</Text>
+            <Text style={pdfStyles.value}>{contactoSecundario.email}</Text>
+            <Text style={pdfStyles.value}>{contactoSecundario.telefono}</Text>
           </View>
         </View>
 
@@ -180,6 +210,8 @@ const CotizacionDocument = ({ data }: { data: any }) => {
             
             // Priorizar item.ingenieros si es válido (incluso si es 6 y desglose tiene 1 elemento vacío)
             const numIngenieros = item.ingenieros ? item.ingenieros : (tieneDesgloseValido ? item.desglose.length : 1);
+
+            const formatCurrency = (val: number) => val.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
             return (
               <View key={idx} style={pdfStyles.tableRow}>
@@ -203,28 +235,28 @@ const CotizacionDocument = ({ data }: { data: any }) => {
                 {/* ✅ Celda "Ing." */}
                 <Text style={pdfStyles.colTiny}>{numIngenieros}</Text>
 
-                <Text style={pdfStyles.colSmall}>{item.cantidad}</Text>
-                <Text style={pdfStyles.colSmall}>${Number(item.precio_unitario).toFixed(2)}</Text>
-                <Text style={[pdfStyles.colSmall, { fontWeight: "bold" }]}>${Number(item.subtotal || item.total).toFixed(2)}</Text>
+                <Text style={[pdfStyles.colSmall, { fontWeight: "bold" }]}>{item.cantidad}</Text>
+                <Text style={[pdfStyles.colSmall, { fontWeight: "bold" }]}>${formatCurrency(Number(item.precio_unitario))}</Text>
+                <Text style={[pdfStyles.colSmall, { fontWeight: "bold", fontSize: 9 * (items.length <= 3 ? 1 : 0.8) }]}>${formatCurrency(Number(item.subtotal || item.total))}</Text>
               </View>
             );
           })}
 
           <View style={pdfStyles.total}>
             <Text>Subtotal:</Text>
-            <Text>${subtotal.toFixed(2)} {moneda}</Text>
+            <Text>${formatCurrency(subtotal)} {moneda}</Text>
           </View>
 
           {iva > 0 && (
             <View style={[pdfStyles.total, { backgroundColor: "#f3f4f6" }]}>
               <Text>IVA (16%):</Text>
-              <Text>${iva.toFixed(2)} {moneda}</Text>
+              <Text>${formatCurrency(iva)} {moneda}</Text>
             </View>
           )}
 
           <View style={[pdfStyles.total, { backgroundColor: "#dbeafe" }]}>
             <Text>TOTAL:</Text>
-            <Text>${totalGuardado.toFixed(2)} {moneda}</Text>
+            <Text>${formatCurrency(totalGuardado)} {moneda}</Text>
           </View>
         </View>
 
@@ -256,14 +288,17 @@ const CotizacionDocument = ({ data }: { data: any }) => {
           )
         )}
 
+        {/* Spacer para empujar la firma al fondo de la página */}
+        <View style={{ flexGrow: 1 }} />
+
         {/* Firma + Footer: wrap=false para que no se separen en otra hoja */}
         <View wrap={false} style={pdfStyles.signatureSection}>
           <Text style={pdfStyles.signatureText}>
             Atentamente,
           </Text>
-          <Image style={pdfStyles.signatureImage} src={(usuario.nombre || "").toLowerCase().includes("eduardo") ? "/eduardo_firma.png" : "/firma_julio.png"} />
+          <Image style={pdfStyles.signatureImage} src={(contactoPrincipal.nombre || "").toLowerCase().includes("eduardo") ? "/eduardo_firma.png" : "/firma_julio.png"} />
           <View style={pdfStyles.signatureLine} />
-          <Text style={pdfStyles.signatureName}>{usuario.nombre || "Representante SIG"}</Text>
+          <Text style={pdfStyles.signatureName}>{contactoPrincipal.nombre || "Representante SIG"}</Text>
           <Text style={pdfStyles.signatureJob}>{puestoUsuario}</Text>
 
           <View style={pdfStyles.footer}>

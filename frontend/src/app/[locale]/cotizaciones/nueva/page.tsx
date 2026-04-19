@@ -172,6 +172,7 @@ const CotizacionPDF: React.FC<CotizacionPDFProps> = ({ formData, itemsServicio, 
   const nombreUsuarioCheck = usuariosRegistrados.find(u => u.email === formData.contactoPrincipal.email)?.nombre || "";
   const puestoUsuario = nombreUsuarioCheck.toLowerCase().includes("eduardo") ? "Back Office Manager" : puestoUsuarioRaw;
   const displayFolio = folio ? folio : "BORRADOR";
+  const formatCurrency = (val: number) => val.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   const usuarioSeleccionado = usuariosRegistrados.find(u => u.email === formData.contactoPrincipal.email);
   const nombreUsuario = usuarioSeleccionado?.nombre || formData.contactoPrincipal.nombre || "Representante SIG";
@@ -283,23 +284,21 @@ const CotizacionPDF: React.FC<CotizacionPDFProps> = ({ formData, itemsServicio, 
                 </View>
 
                 <Text style={pdfStyles.colTiny}>{numIngenieros}</Text>
-                <Text style={pdfStyles.colSmall}>{item.cantidad}</Text>
-                <Text style={pdfStyles.colSmall}>${precioUnitario.toFixed(2)}</Text>
-                <Text style={[pdfStyles.colSmall, { fontWeight: "bold" }]}>${item.total.toFixed(2)}</Text>
+                <Text style={[pdfStyles.colSmall, { fontWeight: "bold" }]}>{item.cantidad}</Text>
+                <Text style={[pdfStyles.colSmall, { fontWeight: "bold" }]}>${formatCurrency(precioUnitario)}</Text>
+                <Text style={[pdfStyles.colSmall, { fontWeight: "bold", fontSize: 9 * (itemsServicio.length <= 3 ? 1 : 0.8) }]}>${formatCurrency(item.total)}</Text>
               </View>
             );
           })}
 
           <View style={pdfStyles.total}>
             <Text>Subtotal:</Text>
-            <Text>${subtotal.toFixed(2)} {formData.condiciones.moneda}</Text>
+            <Text>${formatCurrency(subtotal)} {formData.condiciones.moneda}</Text>
           </View>
-
-
 
           <View style={[pdfStyles.total, { backgroundColor: "#dbeafe" }]}>
             <Text>TOTAL:</Text>
-            <Text>${total.toFixed(2)} {formData.condiciones.moneda}</Text>
+            <Text>${formatCurrency(total)} {formData.condiciones.moneda}</Text>
           </View>
         </View>
 
@@ -326,6 +325,9 @@ const CotizacionPDF: React.FC<CotizacionPDFProps> = ({ formData, itemsServicio, 
             </Text>
           </View>
         )}
+
+        {/* Spacer para empujar la firma al fondo de la página */}
+        <View style={{ flexGrow: 1 }} />
 
         {/* Firma + Footer: wrap=false para mantenerlos juntos */}
         <View wrap={false} style={pdfStyles.signatureSection}>
@@ -746,7 +748,8 @@ const NuevaCotizacionPage: React.FC = () => {
         subtotal: itemsServicio.reduce((sum, i) => sum + i.total, 0),
         iva: 0,
         total: itemsServicio.reduce((sum, i) => sum + i.total, 0),
-        estado: 'borrador'
+        estado: 'borrador',
+        datos_forma: formData
       }
       const { data } = await api.post('/cotizaciones', payload);
 

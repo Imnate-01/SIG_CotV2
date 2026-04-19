@@ -139,6 +139,8 @@ const CotizacionPDF: React.FC<CotizacionPDFProps> = ({ formData, itemsServicio, 
     const nombreUsuarioCheck = usuariosRegistrados.find(u => u.email === formData.contactoPrincipal.email)?.nombre || "";
     const puestoUsuario = nombreUsuarioCheck.toLowerCase().includes("eduardo") ? "Back Office Manager" : puestoUsuarioRaw;
     const displayFolio = folio ? folio : "BORRADOR";
+    const formatCurrency = (val: number) => val.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
     const usuarioSeleccionado = usuariosRegistrados.find(u => u.email === formData.contactoPrincipal.email);
     const nombreUsuario = usuarioSeleccionado?.nombre || formData.contactoPrincipal.nombre || "Representante SIG";
     const emailUsuario = usuarioSeleccionado?.email || formData.contactoPrincipal.email || "contacto@sig.biz";
@@ -218,6 +220,7 @@ const CotizacionPDF: React.FC<CotizacionPDFProps> = ({ formData, itemsServicio, 
                         } else {
                             precioUnitario = item.conContrato ? tarifa?.precio_con_contrato || 0 : tarifa?.precio_sin_contrato || 0;
                         }
+
                         // Bug 5 fix: prioritize item.ingenieros
                         const numIngenieros = item.ingenieros ? item.ingenieros : (tarifa?.requiere_desglose && item.desglose && item.desglose.length > 0 ? item.desglose.length : 1);
                         // Bug 4 fix: validate breakdown
@@ -236,20 +239,20 @@ const CotizacionPDF: React.FC<CotizacionPDFProps> = ({ formData, itemsServicio, 
                                     {item.detalles && <Text style={pdfStyles.notaText}>{isUS ? "Note: " : "Nota: "}{item.detalles}</Text>}
                                 </View>
                                 <Text style={pdfStyles.colTiny}>{numIngenieros}</Text>
-                                <Text style={pdfStyles.colSmall}>{item.cantidad}</Text>
-                                <Text style={pdfStyles.colSmall}>${precioUnitario.toFixed(2)}</Text>
-                                <Text style={[pdfStyles.colSmall, { fontWeight: "bold" }]}>${item.total.toFixed(2)}</Text>
+                                <Text style={[pdfStyles.colSmall, { fontWeight: "bold" }]}>{item.cantidad}</Text>
+                                <Text style={[pdfStyles.colSmall, { fontWeight: "bold" }]}>${formatCurrency(precioUnitario)}</Text>
+                                <Text style={[pdfStyles.colSmall, { fontWeight: "bold", fontSize: 9 * (itemsServicio.length <= 3 ? 1 : 0.8) }]}>${formatCurrency(item.total)}</Text>
                             </View>
                         );
                     })}
                     <View style={pdfStyles.total}>
                         <Text>Subtotal:</Text>
-                        <Text>${subtotal.toFixed(2)} {formData.condiciones.moneda}</Text>
+                        <Text>${formatCurrency(subtotal)} {formData.condiciones.moneda}</Text>
                     </View>
 
                     <View style={[pdfStyles.total, { backgroundColor: "#dbeafe" }]}>
                         <Text>TOTAL:</Text>
-                        <Text>${total.toFixed(2)} {formData.condiciones.moneda}</Text>
+                        <Text>${formatCurrency(total)} {formData.condiciones.moneda}</Text>
                     </View>
                 </View>
                 <View style={pdfStyles.section}>
@@ -274,6 +277,10 @@ const CotizacionPDF: React.FC<CotizacionPDFProps> = ({ formData, itemsServicio, 
                         </Text>
                     </View>
                 )}
+
+                {/* Spacer para empujar la firma al fondo de la página */}
+                <View style={{ flexGrow: 1 }} />
+                
                 {/* Firma + Footer: wrap=false para mantenerlos juntos */}
                 <View wrap={false} style={pdfStyles.signatureSection}>
                     <Text style={pdfStyles.signatureText}>
@@ -556,52 +563,56 @@ const EditarCotizacionPage: React.FC = () => {
                 }
 
                 // Populate Form
-                setFormData({
-                    proveedor: {
-                        nombre: "SIG Combibloc México, S.A. de C.V.",
-                        direccion: "Av. Emilio Castelar No. 75",
-                        colonia: "Polanco IV Sección",
-                        ciudad: "Ciudad de México",
-                        cp: "11550"
-                    },
-                    facturarA: {
-                        nombre: cliente.nombre || "",
-                        direccion: cliente.direccion || "",
-                        colonia: cliente.colonia || "",
-                        ciudad: cliente.ciudad || "",
-                        cp: cliente.cp || ""
-                    },
-                    shipTo: {
-                        // TODO: Si guardáramos shipTo en DB, lo cargaríamos aquí. Por ahora, asumimos mismo que facturar o rellenamos
-                        nombre: cliente.nombre || "",
-                        direccion: cliente.direccion || "",
-                        colonia: cliente.colonia || "",
-                        ciudad: cliente.ciudad || "",
-                        cp: cliente.cp || ""
-                    },
-                    shipToMismoQueFacturar: true, // Default
+                if (cot.datos_forma) {
+                    setFormData(cot.datos_forma);
+                } else {
+                    setFormData({
+                        proveedor: {
+                            nombre: "SIG Combibloc México, S.A. de C.V.",
+                            direccion: "Av. Emilio Castelar No. 75",
+                            colonia: "Polanco IV Sección",
+                            ciudad: "Ciudad de México",
+                            cp: "11550"
+                        },
+                        facturarA: {
+                            nombre: cliente.nombre || "",
+                            direccion: cliente.direccion || "",
+                            colonia: cliente.colonia || "",
+                            ciudad: cliente.ciudad || "",
+                            cp: cliente.cp || ""
+                        },
+                        shipTo: {
+                            // TODO: Si guardáramos shipTo en DB, lo cargaríamos aquí. Por ahora, asumimos mismo que facturar o rellenamos
+                            nombre: cliente.nombre || "",
+                            direccion: cliente.direccion || "",
+                            colonia: cliente.colonia || "",
+                            ciudad: cliente.ciudad || "",
+                            cp: cliente.cp || ""
+                        },
+                        shipToMismoQueFacturar: true, // Default
 
-                    contactoPrincipal: {
-                        // Intentamos sacar del usuario creador o guardado
-                        nombre: cot.usuarios?.nombre || "",
-                        email: cot.usuarios?.email || "",
-                        telefono: cot.usuarios?.telefono || ""
-                    },
-                    contactoSecundario: {
-                        nombre: cliente.contacto_nombre || "",
-                        email: cliente.correo || "",
-                        telefono: cliente.telefono || ""
-                    },
-                    condiciones: {
-                        precios: condiciones.precios || "Los precios cotizados no incluyen IVA",
-                        moneda: condiciones.moneda || "USD",
-                        maquina: condiciones.maquina || "",
-                        observaciones: condiciones.observaciones || "",
-                        entidad: condiciones.entidad || "MX"
-                    },
-                    descripcion: cot.descripcion || "",
-                    tipo_servicio: cot.tipo_servicio || "TM"
-                });
+                        contactoPrincipal: {
+                            // Intentamos sacar del usuario creador o guardado
+                            nombre: cot.usuarios?.nombre || "",
+                            email: cot.usuarios?.email || "",
+                            telefono: cot.usuarios?.telefono || ""
+                        },
+                        contactoSecundario: {
+                            nombre: cliente.contacto_nombre || "",
+                            email: cliente.correo || "",
+                            telefono: cliente.telefono || ""
+                        },
+                        condiciones: {
+                            precios: condiciones.precios || "Los precios cotizados no incluyen IVA",
+                            moneda: condiciones.moneda || "USD",
+                            maquina: condiciones.maquina || "",
+                            observaciones: condiciones.observaciones || "",
+                            entidad: condiciones.entidad || "MX"
+                        },
+                        descripcion: cot.descripcion || "",
+                        tipo_servicio: cot.tipo_servicio || "TM"
+                    });
+                }
 
                 // Populate Items
                 // Necesitamos 'descifrar' si es con contrato o no basado en precios, o asumimos contrato
@@ -695,6 +706,7 @@ const EditarCotizacionPage: React.FC = () => {
                 total: itemsServicio.reduce((sum, i) => sum + i.total, 0),
                 descripcion: formData.descripcion,
                 tipo_servicio: formData.tipo_servicio,
+                datos_forma: formData
             }
 
             // PUT Request
