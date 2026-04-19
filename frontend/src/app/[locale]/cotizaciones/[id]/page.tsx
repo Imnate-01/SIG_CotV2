@@ -126,6 +126,7 @@ const CotizacionDocument = ({ data }: { data: any }) => {
   const totalGuardado = Number(data.total);
   const iva = totalGuardado > subtotal ? totalGuardado - subtotal : 0;
   const moneda = condiciones.moneda || "USD";
+  const formatCurrency = (val: number) => val.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   // Fallback para notas antiguas
   const notasLimpias = !data.condiciones && data.notas
@@ -211,7 +212,6 @@ const CotizacionDocument = ({ data }: { data: any }) => {
             // Priorizar item.ingenieros si es válido (incluso si es 6 y desglose tiene 1 elemento vacío)
             const numIngenieros = item.ingenieros ? item.ingenieros : (tieneDesgloseValido ? item.desglose.length : 1);
 
-            const formatCurrency = (val: number) => val.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
             return (
               <View key={idx} style={pdfStyles.tableRow}>
