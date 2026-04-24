@@ -36,14 +36,14 @@ export class ClientesController {
       if (!token) return res.status(401).json({ success: false, error: "No autorizado" });
       const supabaseUser = createClientForUser(token);
 
-      const { nombre, empresa, direccion, colonia, ciudad, cp, correo, telefono, cliente_direcciones } = req.body
+      const { nombre, empresa, direccion, colonia, ciudad, cp, correo, telefono, cliente_direcciones, pais } = req.body
 
       const { data, error } = await supabaseUser
         .from('clientes')
         .insert({
           nombre,
           empresa: empresa || nombre,
-          direccion, colonia, ciudad, cp, correo, telefono
+          direccion, colonia, ciudad, cp, correo, telefono, pais: pais || 'MX'
         })
         .select()
         .single()

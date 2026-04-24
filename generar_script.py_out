@@ -1,0 +1,375 @@
+DO $$
+DECLARE
+    v_cliente_id INT;
+BEGIN
+    -------------------------------------------------
+    -- Lassonde Specialties Inc.
+    -------------------------------------------------
+    SELECT id INTO v_cliente_id FROM clientes WHERE nombre = 'Lassonde Specialties Inc.' LIMIT 1;
+    IF v_cliente_id IS NULL THEN
+        INSERT INTO clientes (nombre, empresa, direccion, ciudad, pais)
+        VALUES ('Lassonde Specialties Inc.', 'Lassonde Specialties Inc.', '200 rue St-Joseph', 'Saint-Damase, QC', 'CA')
+        RETURNING id INTO v_cliente_id;
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM cliente_maquinas WHERE serie = '862551006' AND cliente_id = v_cliente_id) THEN
+        INSERT INTO cliente_maquinas (cliente_id, modelo_maquina, serie, machine_id)
+        VALUES (v_cliente_id, 'CFA 505-31 FP', '862551006', '862551006');
+    END IF;
+
+    -------------------------------------------------
+    -- Cardiff Products
+    -------------------------------------------------
+    SELECT id INTO v_cliente_id FROM clientes WHERE nombre = 'Cardiff Products' LIMIT 1;
+    IF v_cliente_id IS NULL THEN
+        INSERT INTO clientes (nombre, empresa, direccion, ciudad, pais)
+        VALUES ('Cardiff Products', 'Cardiff Products', '2300 Discovery Dr', 'London, ON  N6M 0C6', 'CA')
+        RETURNING id INTO v_cliente_id;
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM cliente_maquinas WHERE serie = '873051195' AND cliente_id = v_cliente_id) THEN
+        INSERT INTO cliente_maquinas (cliente_id, modelo_maquina, serie, machine_id)
+        VALUES (v_cliente_id, 'CFA 124-37', '873051195', '873051195');
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM cliente_maquinas WHERE serie = '873051196' AND cliente_id = v_cliente_id) THEN
+        INSERT INTO cliente_maquinas (cliente_id, modelo_maquina, serie, machine_id)
+        VALUES (v_cliente_id, 'CFA 124-37', '873051196', '873051196');
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM cliente_maquinas WHERE serie = '873051213' AND cliente_id = v_cliente_id) THEN
+        INSERT INTO cliente_maquinas (cliente_id, modelo_maquina, serie, machine_id)
+        VALUES (v_cliente_id, 'CFA 124-37', '873051213', '873051213');
+    END IF;
+
+    -------------------------------------------------
+    -- Lyons Magnus, Inc.
+    -------------------------------------------------
+    SELECT id INTO v_cliente_id FROM clientes WHERE nombre = 'Lyons Magnus, Inc.' LIMIT 1;
+    IF v_cliente_id IS NULL THEN
+        INSERT INTO clientes (nombre, empresa, direccion, ciudad, pais)
+        VALUES ('Lyons Magnus, Inc.', 'Lyons Magnus, Inc.', '3158 E Hamilton Avenue', 'Fresno, CA 93702', 'US')
+        RETURNING id INTO v_cliente_id;
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM cliente_maquinas WHERE serie = '854451001' AND cliente_id = v_cliente_id) THEN
+        INSERT INTO cliente_maquinas (cliente_id, modelo_maquina, serie, machine_id)
+        VALUES (v_cliente_id, 'CFA 405-32 FP', '854451001', '854451001');
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM cliente_maquinas WHERE serie = '850451022' AND cliente_id = v_cliente_id) THEN
+        INSERT INTO cliente_maquinas (cliente_id, modelo_maquina, serie, machine_id)
+        VALUES (v_cliente_id, 'CFA 406-32', '850451022', '850451022');
+    END IF;
+
+    -------------------------------------------------
+    -- Power Packaging
+    -------------------------------------------------
+    SELECT id INTO v_cliente_id FROM clientes WHERE nombre = 'Power Packaging' LIMIT 1;
+    IF v_cliente_id IS NULL THEN
+        INSERT INTO clientes (nombre, empresa, direccion, ciudad, pais)
+        VALUES ('Power Packaging', 'Power Packaging', '525 Dunham Rd.', 'St. Charles, IL 60174', 'US')
+        RETURNING id INTO v_cliente_id;
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM cliente_maquinas WHERE serie = '8224N049' AND cliente_id = v_cliente_id) THEN
+        INSERT INTO cliente_maquinas (cliente_id, modelo_maquina, serie, machine_id)
+        VALUES (v_cliente_id, 'CFA 405-21', '8224N049', '8224N049');
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM cliente_maquinas WHERE serie = '850451016' AND cliente_id = v_cliente_id) THEN
+        INSERT INTO cliente_maquinas (cliente_id, modelo_maquina, serie, machine_id)
+        VALUES (v_cliente_id, 'CFA 406-32', '850451016', '850451016');
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM cliente_maquinas WHERE serie = '860351047' AND cliente_id = v_cliente_id) THEN
+        INSERT INTO cliente_maquinas (cliente_id, modelo_maquina, serie, machine_id)
+        VALUES (v_cliente_id, 'CFA 310-32', '860351047', '860351047');
+    END IF;
+
+    -------------------------------------------------
+    -- Steuben Foods Inc.
+    -------------------------------------------------
+    SELECT id INTO v_cliente_id FROM clientes WHERE nombre = 'Steuben Foods Inc.' LIMIT 1;
+    IF v_cliente_id IS NULL THEN
+        INSERT INTO clientes (nombre, empresa, direccion, ciudad, pais)
+        VALUES ('Steuben Foods Inc.', 'Steuben Foods Inc.', '1150 Maple Road', 'Elma, NY 14059', 'US')
+        RETURNING id INTO v_cliente_id;
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM cliente_maquinas WHERE serie = '869351072' AND cliente_id = v_cliente_id) THEN
+        INSERT INTO cliente_maquinas (cliente_id, modelo_maquina, serie, machine_id)
+        VALUES (v_cliente_id, 'CFA 312-35', '869351072', '869351072');
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM cliente_maquinas WHERE serie = '890151006' AND cliente_id = v_cliente_id) THEN
+        INSERT INTO cliente_maquinas (cliente_id, modelo_maquina, serie, machine_id)
+        VALUES (v_cliente_id, 'CDA 1012-36', '890151006', '890151006');
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM cliente_maquinas WHERE serie = '870751189' AND cliente_id = v_cliente_id) THEN
+        INSERT INTO cliente_maquinas (cliente_id, modelo_maquina, serie, machine_id)
+        VALUES (v_cliente_id, 'CFA 712-32', '870751189', '870751189');
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM cliente_maquinas WHERE serie = '869351091' AND cliente_id = v_cliente_id) THEN
+        INSERT INTO cliente_maquinas (cliente_id, modelo_maquina, serie, machine_id)
+        VALUES (v_cliente_id, 'CFA 312-35', '869351091', '869351091');
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM cliente_maquinas WHERE serie = '874251003' AND cliente_id = v_cliente_id) THEN
+        INSERT INTO cliente_maquinas (cliente_id, modelo_maquina, serie, machine_id)
+        VALUES (v_cliente_id, 'CFA 1824-37', '874251003', '874251003');
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM cliente_maquinas WHERE serie = '890151018' AND cliente_id = v_cliente_id) THEN
+        INSERT INTO cliente_maquinas (cliente_id, modelo_maquina, serie, machine_id)
+        VALUES (v_cliente_id, 'CDA 1012-37', '890151018', '890151018');
+    END IF;
+
+    -------------------------------------------------
+    -- Protenergy Natural Foods
+    -------------------------------------------------
+    SELECT id INTO v_cliente_id FROM clientes WHERE nombre = 'Protenergy Natural Foods' LIMIT 1;
+    IF v_cliente_id IS NULL THEN
+        INSERT INTO clientes (nombre, empresa, direccion, ciudad, pais)
+        VALUES ('Protenergy Natural Foods', 'Protenergy Natural Foods', '904 Woods Rd', 'Cambridge, MD 21613', 'US')
+        RETURNING id INTO v_cliente_id;
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM cliente_maquinas WHERE serie = '869351077' AND cliente_id = v_cliente_id) THEN
+        INSERT INTO cliente_maquinas (cliente_id, modelo_maquina, serie, machine_id)
+        VALUES (v_cliente_id, 'CFA 312-35', '869351077', '869351077');
+    END IF;
+
+    -------------------------------------------------
+    -- Hirzel Canning Co.
+    -------------------------------------------------
+    SELECT id INTO v_cliente_id FROM clientes WHERE nombre = 'Hirzel Canning Co.' LIMIT 1;
+    IF v_cliente_id IS NULL THEN
+        INSERT INTO clientes (nombre, empresa, direccion, ciudad, pais)
+        VALUES ('Hirzel Canning Co.', 'Hirzel Canning Co.', '411 Lemoyne Rd.', 'Northwood, OH 43619', 'US')
+        RETURNING id INTO v_cliente_id;
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM cliente_maquinas WHERE serie = '862551003' AND cliente_id = v_cliente_id) THEN
+        INSERT INTO cliente_maquinas (cliente_id, modelo_maquina, serie, machine_id)
+        VALUES (v_cliente_id, 'CFA 505-31 FP', '862551003', '862551003');
+    END IF;
+
+    -------------------------------------------------
+    -- Refresco US, Inc.
+    -------------------------------------------------
+    SELECT id INTO v_cliente_id FROM clientes WHERE nombre = 'Refresco US, Inc.' LIMIT 1;
+    IF v_cliente_id IS NULL THEN
+        INSERT INTO clientes (nombre, empresa, direccion, ciudad, pais)
+        VALUES ('Refresco US, Inc.', 'Refresco US, Inc.', '2090 Bartow Rd', 'Lakeland, FL 33801', 'US')
+        RETURNING id INTO v_cliente_id;
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM cliente_maquinas WHERE serie = '873051132' AND cliente_id = v_cliente_id) THEN
+        INSERT INTO cliente_maquinas (cliente_id, modelo_maquina, serie, machine_id)
+        VALUES (v_cliente_id, 'CFA 124-36', '873051132', '873051132');
+    END IF;
+
+    -------------------------------------------------
+    -- Mountain Top Beverage
+    -------------------------------------------------
+    SELECT id INTO v_cliente_id FROM clientes WHERE nombre = 'Mountain Top Beverage' LIMIT 1;
+    IF v_cliente_id IS NULL THEN
+        INSERT INTO clientes (nombre, empresa, direccion, ciudad, pais)
+        VALUES ('Mountain Top Beverage', 'Mountain Top Beverage', '6000 Rail Street', 'Morgantown, WV', 'US')
+        RETURNING id INTO v_cliente_id;
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM cliente_maquinas WHERE serie = '873051197' AND cliente_id = v_cliente_id) THEN
+        INSERT INTO cliente_maquinas (cliente_id, modelo_maquina, serie, machine_id)
+        VALUES (v_cliente_id, 'CFA 124-37', '873051197', '873051197');
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM cliente_maquinas WHERE serie = '873051198' AND cliente_id = v_cliente_id) THEN
+        INSERT INTO cliente_maquinas (cliente_id, modelo_maquina, serie, machine_id)
+        VALUES (v_cliente_id, 'CFA 124-37', '873051198', '873051198');
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM cliente_maquinas WHERE serie = '873051204' AND cliente_id = v_cliente_id) THEN
+        INSERT INTO cliente_maquinas (cliente_id, modelo_maquina, serie, machine_id)
+        VALUES (v_cliente_id, 'CFA 124-37', '873051204', '873051204');
+    END IF;
+
+    -------------------------------------------------
+    -- Lyons Magnus Kentucky
+    -------------------------------------------------
+    SELECT id INTO v_cliente_id FROM clientes WHERE nombre = 'Lyons Magnus Kentucky' LIMIT 1;
+    IF v_cliente_id IS NULL THEN
+        INSERT INTO clientes (nombre, empresa, direccion, ciudad, pais)
+        VALUES ('Lyons Magnus Kentucky', 'Lyons Magnus Kentucky', '95 Richwood Rd.', 'Walton, KY 41094', 'US')
+        RETURNING id INTO v_cliente_id;
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM cliente_maquinas WHERE serie = '850451003' AND cliente_id = v_cliente_id) THEN
+        INSERT INTO cliente_maquinas (cliente_id, modelo_maquina, serie, machine_id)
+        VALUES (v_cliente_id, 'CFA 406-32', '850451003', '850451003');
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM cliente_maquinas WHERE serie = '854451002' AND cliente_id = v_cliente_id) THEN
+        INSERT INTO cliente_maquinas (cliente_id, modelo_maquina, serie, machine_id)
+        VALUES (v_cliente_id, 'CFA 405-32 FP', '854451002', '854451002');
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM cliente_maquinas WHERE serie = '850451027' AND cliente_id = v_cliente_id) THEN
+        INSERT INTO cliente_maquinas (cliente_id, modelo_maquina, serie, machine_id)
+        VALUES (v_cliente_id, 'CFA 406-32', '850451027', '850451027');
+    END IF;
+
+    -------------------------------------------------
+    -- Johanna Beverage
+    -------------------------------------------------
+    SELECT id INTO v_cliente_id FROM clientes WHERE nombre = 'Johanna Beverage' LIMIT 1;
+    IF v_cliente_id IS NULL THEN
+        INSERT INTO clientes (nombre, empresa, direccion, ciudad, pais)
+        VALUES ('Johanna Beverage', 'Johanna Beverage', '5625 W Thorpe Rd', 'Spokane, WA 99224', 'US')
+        RETURNING id INTO v_cliente_id;
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM cliente_maquinas WHERE serie = '870151177' AND cliente_id = v_cliente_id) THEN
+        INSERT INTO cliente_maquinas (cliente_id, modelo_maquina, serie, machine_id)
+        VALUES (v_cliente_id, 'CFA 112-32', '870151177', '870151177');
+    END IF;
+
+    -------------------------------------------------
+    -- Leahy / IFP
+    -------------------------------------------------
+    SELECT id INTO v_cliente_id FROM clientes WHERE nombre = 'Leahy / IFP' LIMIT 1;
+    IF v_cliente_id IS NULL THEN
+        INSERT INTO clientes (nombre, empresa, direccion, ciudad, pais)
+        VALUES ('Leahy / IFP', 'Leahy / IFP', '2232 Meridian Blvd., Ste. K', 'Minden, NV 89423', 'US')
+        RETURNING id INTO v_cliente_id;
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM cliente_maquinas WHERE serie = '850451014' AND cliente_id = v_cliente_id) THEN
+        INSERT INTO cliente_maquinas (cliente_id, modelo_maquina, serie, machine_id)
+        VALUES (v_cliente_id, 'CFA 406-32', '850451014', '850451014');
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM cliente_maquinas WHERE serie = '850451015' AND cliente_id = v_cliente_id) THEN
+        INSERT INTO cliente_maquinas (cliente_id, modelo_maquina, serie, machine_id)
+        VALUES (v_cliente_id, 'CFA 406-32', '850451015', '850451015');
+    END IF;
+
+    -------------------------------------------------
+    -- Kerry Ingredients & Flavours
+    -------------------------------------------------
+    SELECT id INTO v_cliente_id FROM clientes WHERE nombre = 'Kerry Ingredients & Flavours' LIMIT 1;
+    IF v_cliente_id IS NULL THEN
+        INSERT INTO clientes (nombre, empresa, direccion, ciudad, pais)
+        VALUES ('Kerry Ingredients & Flavours', 'Kerry Ingredients & Flavours', '3400 Millington Road', 'Beloit, WI 53511', 'US')
+        RETURNING id INTO v_cliente_id;
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM cliente_maquinas WHERE serie = '8224N032' AND cliente_id = v_cliente_id) THEN
+        INSERT INTO cliente_maquinas (cliente_id, modelo_maquina, serie, machine_id)
+        VALUES (v_cliente_id, 'CFA 405-21', '8224N032', '8224N032');
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM cliente_maquinas WHERE serie = '8224EA024' AND cliente_id = v_cliente_id) THEN
+        INSERT INTO cliente_maquinas (cliente_id, modelo_maquina, serie, machine_id)
+        VALUES (v_cliente_id, 'CFA 405-21', '8224EA024', '8224EA024');
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM cliente_maquinas WHERE serie = '870151040' AND cliente_id = v_cliente_id) THEN
+        INSERT INTO cliente_maquinas (cliente_id, modelo_maquina, serie, machine_id)
+        VALUES (v_cliente_id, 'CFA 112-32', '870151040', '870151040');
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM cliente_maquinas WHERE serie = '8224N056' AND cliente_id = v_cliente_id) THEN
+        INSERT INTO cliente_maquinas (cliente_id, modelo_maquina, serie, machine_id)
+        VALUES (v_cliente_id, 'CFA 405-21', '8224N056', '8224N056');
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM cliente_maquinas WHERE serie = '869351129' AND cliente_id = v_cliente_id) THEN
+        INSERT INTO cliente_maquinas (cliente_id, modelo_maquina, serie, machine_id)
+        VALUES (v_cliente_id, 'CFA 312-35', '869351129', '869351129');
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM cliente_maquinas WHERE serie = '850451028' AND cliente_id = v_cliente_id) THEN
+        INSERT INTO cliente_maquinas (cliente_id, modelo_maquina, serie, machine_id)
+        VALUES (v_cliente_id, 'CFA 406-32', '850451028', '850451028');
+    END IF;
+
+    -------------------------------------------------
+    -- KROGER - DENVER
+    -------------------------------------------------
+    SELECT id INTO v_cliente_id FROM clientes WHERE nombre = 'KROGER - DENVER' LIMIT 1;
+    IF v_cliente_id IS NULL THEN
+        INSERT INTO clientes (nombre, empresa, direccion, ciudad, pais)
+        VALUES ('KROGER - DENVER', 'KROGER - DENVER', '10241 E 51st Ave', 'Denver, CO 80239', 'US')
+        RETURNING id INTO v_cliente_id;
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM cliente_maquinas WHERE serie = '869351113' AND cliente_id = v_cliente_id) THEN
+        INSERT INTO cliente_maquinas (cliente_id, modelo_maquina, serie, machine_id)
+        VALUES (v_cliente_id, 'CFA 312-35', '869351113', '869351113');
+    END IF;
+
+    -------------------------------------------------
+    -- Leahy / IFP, Inc.
+    -------------------------------------------------
+    SELECT id INTO v_cliente_id FROM clientes WHERE nombre = 'Leahy / IFP, Inc.' LIMIT 1;
+    IF v_cliente_id IS NULL THEN
+        INSERT INTO clientes (nombre, empresa, direccion, ciudad, pais)
+        VALUES ('Leahy / IFP, Inc.', 'Leahy / IFP, Inc.', '2101 W Haven Avenue', 'New Lenox, IL 60451', 'US')
+        RETURNING id INTO v_cliente_id;
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM cliente_maquinas WHERE serie = '850451021' AND cliente_id = v_cliente_id) THEN
+        INSERT INTO cliente_maquinas (cliente_id, modelo_maquina, serie, machine_id)
+        VALUES (v_cliente_id, 'CFA 406-32', '850451021', '850451021');
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM cliente_maquinas WHERE serie = '850451024' AND cliente_id = v_cliente_id) THEN
+        INSERT INTO cliente_maquinas (cliente_id, modelo_maquina, serie, machine_id)
+        VALUES (v_cliente_id, 'CFA 406-32', '850451024', '850451024');
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM cliente_maquinas WHERE serie = '869351151' AND cliente_id = v_cliente_id) THEN
+        INSERT INTO cliente_maquinas (cliente_id, modelo_maquina, serie, machine_id)
+        VALUES (v_cliente_id, 'CFA 312-37', '869351151', '869351151');
+    END IF;
+
+    -------------------------------------------------
+    -- Baldwin Richardson Foods
+    -------------------------------------------------
+    SELECT id INTO v_cliente_id FROM clientes WHERE nombre = 'Baldwin Richardson Foods' LIMIT 1;
+    IF v_cliente_id IS NULL THEN
+        INSERT INTO clientes (nombre, empresa, direccion, ciudad, pais)
+        VALUES ('Baldwin Richardson Foods', 'Baldwin Richardson Foods', '1550 John Tipton Blvd.', 'Pennsauken, NJ 08110', 'US')
+        RETURNING id INTO v_cliente_id;
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM cliente_maquinas WHERE serie = '850451026' AND cliente_id = v_cliente_id) THEN
+        INSERT INTO cliente_maquinas (cliente_id, modelo_maquina, serie, machine_id)
+        VALUES (v_cliente_id, 'CFA 406-32', '850451026', '850451026');
+    END IF;
+
+    -------------------------------------------------
+    -- Sun Orchard, LLC
+    -------------------------------------------------
+    SELECT id INTO v_cliente_id FROM clientes WHERE nombre = 'Sun Orchard, LLC' LIMIT 1;
+    IF v_cliente_id IS NULL THEN
+        INSERT INTO clientes (nombre, empresa, direccion, ciudad, pais)
+        VALUES ('Sun Orchard, LLC', 'Sun Orchard, LLC', '8600 N.W. 36th Street, Ste 250', 'Doral, FL 33166', 'US')
+        RETURNING id INTO v_cliente_id;
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM cliente_maquinas WHERE serie = '850451020' AND cliente_id = v_cliente_id) THEN
+        INSERT INTO cliente_maquinas (cliente_id, modelo_maquina, serie, machine_id)
+        VALUES (v_cliente_id, 'CFA 406-32', '850451020', '850451020');
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM cliente_maquinas WHERE serie = '869351168' AND cliente_id = v_cliente_id) THEN
+        INSERT INTO cliente_maquinas (cliente_id, modelo_maquina, serie, machine_id)
+        VALUES (v_cliente_id, 'CFA 312-37', '869351168', '869351168');
+    END IF;
+
+END $$;

@@ -27,6 +27,7 @@ interface Cliente {
   cp?: string | null;
   correo?: string | null;
   telefono?: string | null;
+  pais?: string | null;
   cliente_direcciones?: ClienteDireccion[];
 }
 
@@ -51,6 +52,7 @@ export default function ClientesPage() {
     cp: "",
     correo: "",
     telefono: "",
+    pais: "MX",
     cliente_direcciones: [] as ClienteDireccion[],
   });
 
@@ -83,6 +85,7 @@ export default function ClientesPage() {
         cp: cliente.cp ?? "",
         correo: cliente.correo ?? "",
         telefono: cliente.telefono ?? "",
+        pais: cliente.pais ?? "MX",
         cliente_direcciones: cliente.cliente_direcciones || [],
       });
     } else {
@@ -97,6 +100,7 @@ export default function ClientesPage() {
         cp: "",
         correo: "",
         telefono: "",
+        pais: "MX",
         cliente_direcciones: [],
       });
     }
@@ -282,13 +286,26 @@ export default function ClientesPage() {
                   />
                 </div>
 
-                <div className="col-span-2">
+                <div className="col-span-2 md:col-span-1">
                   <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{t("commercialName")}</label>
                   <input
                     className="w-full p-3 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-900 dark:text-white outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all dark:placeholder-gray-500"
                     value={formData.empresa}
                     onChange={(e) => setFormData({ ...formData, empresa: e.target.value })}
                   />
+                </div>
+
+                <div className="col-span-2 md:col-span-1">
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">País / Entidad</label>
+                  <select
+                    className="w-full p-3 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-900 dark:text-white outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all"
+                    value={formData.pais}
+                    onChange={(e) => setFormData({ ...formData, pais: e.target.value })}
+                  >
+                    <option value="MX">México (MX)</option>
+                    <option value="US">Estados Unidos (US)</option>
+                    <option value="CA">Canadá (CA)</option>
+                  </select>
                 </div>
 
                 <div className="col-span-2 md:col-span-1">

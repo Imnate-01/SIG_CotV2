@@ -76,7 +76,8 @@ export class CotizacionesController {
               ciudad: facturarA.ciudad || '',
               cp: facturarA.cp || '',
               correo: contactoSecundario?.email || '',
-              telefono: contactoSecundario?.telefono || ''
+              telefono: contactoSecundario?.telefono || '',
+              pais: condiciones?.entidad || 'MX'
             })
             .select()
             .single()
@@ -348,7 +349,8 @@ Observaciones: ${condiciones?.observaciones || ''}
               ciudad: facturarA.ciudad || '',
               cp: facturarA.cp || '',
               correo: contactoSecundario?.email || '',
-              telefono: contactoSecundario?.telefono || ''
+              telefono: contactoSecundario?.telefono || '',
+              pais: condiciones?.entidad || 'MX'
             })
             .select()
             .single()

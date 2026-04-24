@@ -49,7 +49,7 @@ interface Proveedor { nombre: string; direccion: string; colonia: string; ciudad
 interface FacturarA { nombre: string; direccion: string; colonia: string; ciudad: string; cp: string; }
 interface ShipTo { nombre: string; direccion: string; colonia: string; ciudad: string; cp: string; }
 interface Contacto { nombre: string; email: string; telefono: string; }
-interface Condiciones { precios: string; moneda: string; maquina: string; observaciones: string; entidad?: "MX" | "US"; }
+interface Condiciones { precios: string; moneda: string; maquina: string; observaciones: string; entidad?: "MX" | "US" | "CA"; scopeOfVisit?: string; equipmentToService?: string; paymentTerms?: string; }
 interface CotizacionFormData {
     proveedor: Proveedor;
     facturarA: FacturarA;
@@ -72,6 +72,7 @@ interface ClientePredefinido {
     colonia: string;
     ciudad: string;
     cp: string;
+    pais?: string;
 }
 interface UsuarioRegistrado { id: string; nombre: string; email: string; telefono: string; puesto?: string; departamento?: string; }
 interface Tarifa {
@@ -145,7 +146,7 @@ const CotizacionPDF: React.FC<CotizacionPDFProps> = ({ formData, itemsServicio, 
     const usuarioSeleccionado = usuariosRegistrados.find(u => u.email === formData.contactoPrincipal.email);
     const nombreUsuario = usuarioSeleccionado?.nombre || formData.contactoPrincipal.nombre || "Representante SIG";
     const emailUsuario = usuarioSeleccionado?.email || formData.contactoPrincipal.email || "contacto@sig.biz";
-    const isUS = formData.condiciones.entidad === "US";
+    const isUS = formData.condiciones.entidad === "US" || formData.condiciones.entidad === "CA";
 
     return (
         <Document>
@@ -259,14 +260,36 @@ const CotizacionPDF: React.FC<CotizacionPDFProps> = ({ formData, itemsServicio, 
                 <View style={pdfStyles.section}>
                     <Text style={pdfStyles.label}>{isUS ? "General Conditions:" : "Condiciones Generales:"}</Text>
                     <Text style={pdfStyles.value}>
-                        <Text style={{ fontWeight: "bold" }}>{isUS ? "Prices: " : "Precios: "}</Text>{formData.condiciones.precios} | <Text style={{ fontWeight: "bold" }}>{isUS ? "Currency: " : "Moneda: "}</Text>{formData.condiciones.moneda}
-                        {formData.condiciones.maquina && <Text> | <Text style={{ fontWeight: "bold" }}>{isUS ? "Machine: " : "Máquina: "}</Text>{formData.condiciones.maquina}</Text>}
+                        {!isUS && <Text><Text style={{ fontWeight: "bold" }}>Precios: </Text>{formData.condiciones.precios} | <Text style={{ fontWeight: "bold" }}>Moneda: </Text>{formData.condiciones.moneda}</Text>}
+                        {(!isUS && formData.condiciones.maquina) && <Text> | <Text style={{ fontWeight: "bold" }}>Máquina: </Text>{formData.condiciones.maquina}</Text>}
+                        {(isUS && formData.condiciones.maquina) && <Text><Text style={{ fontWeight: "bold" }}>Machine: </Text>{formData.condiciones.maquina}</Text>}
                     </Text>
                 </View>
                 {formData.condiciones.observaciones && (
                     <View style={pdfStyles.section}>
                         <Text style={pdfStyles.label}>{isUS ? "Observations:" : "Observaciones:"}</Text>
                         <Text style={pdfStyles.value}>{formData.condiciones.observaciones}</Text>
+                    </View>
+                )}
+
+                {isUS && formData.condiciones.scopeOfVisit && (
+                    <View style={pdfStyles.section}>
+                        <Text style={pdfStyles.label}>Scope of visit:</Text>
+                        <Text style={pdfStyles.value}>{formData.condiciones.scopeOfVisit}</Text>
+                    </View>
+                )}
+
+                {isUS && formData.condiciones.equipmentToService && (
+                    <View style={pdfStyles.section}>
+                        <Text style={pdfStyles.label}>Equipment to be Serviced:</Text>
+                        <Text style={pdfStyles.value}>{formData.condiciones.equipmentToService}</Text>
+                    </View>
+                )}
+
+                {isUS && formData.condiciones.paymentTerms && (
+                    <View style={pdfStyles.section}>
+                        <Text style={pdfStyles.label}>Payment Terms:</Text>
+                        <Text style={pdfStyles.value}>{formData.condiciones.paymentTerms}</Text>
                     </View>
                 )}
                 
@@ -938,18 +961,31 @@ const EditarCotizacionPage: React.FC = () => {
                             </select>
                         </div>
 
-                        <div>
-                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Moneda</label>
-                            <select
-                                value={formData.condiciones.moneda}
-                                onChange={(e) => handleInputChange("condiciones", "moneda", e.target.value)}
-                                className="premium-select w-full px-4 py-3 border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            >
-                                <option value="USD">Dólares (USD)</option>
-                                <option value="MXN">Pesos Mexicanos (MXN)</option>
-                                <option value="EUR">Euros (EUR)</option>
-                            </select>
-                        </div>
+                        {formData.condiciones.entidad !== "US" ? (
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Moneda</label>
+                                <select
+                                    value={formData.condiciones.moneda}
+                                    onChange={(e) => handleInputChange("condiciones", "moneda", e.target.value)}
+                                    className="premium-select w-full px-4 py-3 border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                >
+                                    <option value="USD">Dólares (USD)</option>
+                                    <option value="MXN">Pesos Mexicanos (MXN)</option>
+                                    <option value="EUR">Euros (EUR)</option>
+                                </select>
+                            </div>
+                        ) : (
+                            <>
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Scope of visit</label>
+                                    <input type="text" value={formData.condiciones.scopeOfVisit || ""} onChange={(e) => handleInputChange("condiciones", "scopeOfVisit", e.target.value)} className="w-full px-4 py-3 border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Enter scope of visit..." />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Equipment to be Serviced</label>
+                                    <input type="text" value={formData.condiciones.equipmentToService || ""} onChange={(e) => handleInputChange("condiciones", "equipmentToService", e.target.value)} className="w-full px-4 py-3 border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Enter equipment details..." />
+                                </div>
+                            </>
+                        )}
                     </div>
                 </div>
 
@@ -965,7 +1001,13 @@ const EditarCotizacionPage: React.FC = () => {
                             <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">Cliente</label>
                             <select value={clienteSeleccionadoId} onChange={(e) => handleSelectCliente(e.target.value)} className="premium-select w-full p-3 border border-gray-300 rounded-xl dark:border-zinc-700 dark:bg-zinc-800 dark:text-white focus:ring-2 focus:ring-blue-500">
                                 <option value="">Seleccionar...</option>
-                                {clientesDisponibles.map((c) => (<option key={c.id} value={c.id}>{c.nombre}</option>))}
+                                {clientesDisponibles
+                                    .filter((c) => {
+                                        const isUS = formData.condiciones.entidad === "US" || formData.condiciones.entidad === "CA";
+                                        if (isUS) return c.pais === "US" || c.pais === "CA";
+                                        return c.pais === "MX" || !c.pais;
+                                    })
+                                    .map((c) => (<option key={c.id} value={c.id}>{c.nombre}</option>))}
                             </select>
                         </div>
                         <div className="md:col-span-2">
@@ -1077,6 +1119,15 @@ const EditarCotizacionPage: React.FC = () => {
                     <div className="flex gap-2">
                         <button onClick={mejorarObservaciones} disabled={mejorandoTexto} className="bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-3 py-1 rounded text-xs font-bold flex items-center gap-1 disabled:opacity-50"><Sparkles size={12} /> Mejorar con IA</button>
                     </div>
+
+                    {formData.condiciones.entidad === "US" && (
+                        <div className="grid grid-cols-1 gap-4 mt-4 pt-4 border-t border-gray-200 dark:border-zinc-700">
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Payment Terms</label>
+                                <input type="text" value={formData.condiciones.paymentTerms || ""} onChange={(e) => handleInputChange("condiciones", "paymentTerms", e.target.value)} className="w-full p-3 border border-gray-300 dark:border-zinc-700 rounded-xl text-sm bg-white dark:bg-zinc-800 text-gray-900 dark:text-white placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Enter payment terms..." />
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* ACTIONS */}
