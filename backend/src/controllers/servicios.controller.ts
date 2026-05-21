@@ -1,19 +1,18 @@
 import { Request, Response } from 'express'
-import { createClientForUser } from '../config/supabase' // Usamos el cliente seguro
+import { createClientForUser, supabaseAdmin } from '../config/supabase'
 
 export class ServiciosController {
 
   // OBTENER TODOS (Solo los activos)
+  // Usamos supabaseAdmin para bypassear RLS en la lectura del catálogo público de tarifas
   async getAll(req: Request, res: Response) {
     try {
       const token = req.headers.authorization?.split(' ')[1];
       if (!token) return res.status(401).json({ success: false, error: "No autorizado" });
 
-      const supabaseUser = createClientForUser(token);
-
       // Filtrar por region si viene como query param
       const region = req.query.region as string | undefined;
-      let query = supabaseUser
+      let query = supabaseAdmin
         .from('servicios')
         .select('*')
         .eq('activo', true)

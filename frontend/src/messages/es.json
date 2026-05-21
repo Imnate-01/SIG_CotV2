@@ -388,7 +388,17 @@
     "stepOf": "Paso {current} de {total}",
     "btnStart": "¡Comenzar! 🚀",
     "btnNext": "Siguiente",
-    "btnSkip": "Saltar tour"
+    "btnSkip": "Saltar tour",
+    "fsa_step1Title": "¡Bienvenido a Food Safety Audit!",
+    "fsa_step1Desc": "Esta es tu herramienta para registrar y gestionar auditorías de inocuidad alimentaria. En un momento te mostramos cómo funciona.",
+    "fsa_step2Title": "Tablero de Auditorías",
+    "fsa_step2Desc": "Aquí encontrarás todos tus reportes FSA: filtra por estado, búscalos por folio o llenadora, y consulta el historial completo de auditorías.",
+    "fsa_step3Title": "Crear un Nuevo Reporte",
+    "fsa_step3Desc": "Desde aquí inicias una nueva auditoría FSA. Captura la información de la llenadora, completa las secciones de inspección y genera el reporte final.",
+    "fsa_step3Action": "Crear mi primer reporte FSA →",
+    "fsa_step4Title": "¡Listo, {name}!",
+    "fsa_step4TitleGeneric": "¡Todo listo!",
+    "fsa_step4Desc": "Ya tienes acceso a todo lo que necesitas para tus auditorías. Recuerda que el equipo de soporte está disponible desde el menú de Ayuda. ¡Éxito!"
   },
   "NuevaCotizacion": {
     "title": "Nueva Cotización",

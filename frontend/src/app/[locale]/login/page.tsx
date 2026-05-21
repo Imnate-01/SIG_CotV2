@@ -7,6 +7,32 @@ import Cookies from "js-cookie";
 import { toast } from "sonner";
 import { Eye, EyeOff } from "lucide-react";
 
+/**
+ * Detecta si el usuario pertenece al grupo de Ingeniería Aséptica / Calidad Aséptica.
+ * Mismas palabras clave que el Sidebar para mantener consistencia.
+ */
+const ASEPTICO_KEYWORDS = [
+  'aseptic', 'aséptic',
+  'calidad',
+  'ingeniero', 'engineer',
+  'intern',
+];
+
+function esRolAseptico(rol?: string, departamento?: string): boolean {
+  const rolLower  = (rol          || '').toLowerCase();
+  const deptLower = (departamento || '').toLowerCase();
+  return ASEPTICO_KEYWORDS.some(
+    (kw) => rolLower.includes(kw) || deptLower.includes(kw)
+  );
+}
+
+/** Devuelve la ruta de inicio según el rol del usuario */
+function rutaInicio(usuario: { rol?: string; departamento?: string }): string {
+  return esRolAseptico(usuario.rol, usuario.departamento)
+    ? '/food-safety-audit'
+    : '/cotizaciones';
+}
+
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const router = useRouter();
@@ -27,12 +53,7 @@ export default function LoginPage() {
       if (userJson) {
         try {
           const parsedUser = JSON.parse(userJson);
-          const depto = parsedUser.departamento || "";
-          if (depto.toLowerCase().includes("técnico") || depto.toLowerCase().includes("servicio") || parsedUser.rol === 'ingeniero') {
-            router.push("/reportestec");
-          } else {
-            router.push("/cotizaciones");
-          }
+          router.push(rutaInicio(parsedUser));
         } catch {
           router.push("/cotizaciones");
         }
@@ -89,13 +110,7 @@ export default function LoginPage() {
         }
       }
 
-      const depto = data.usuario.departamento || "";
-
-      if (depto.toLowerCase().includes("técnico") || depto.toLowerCase().includes("servicio") || data.usuario.rol === 'ingeniero') {
-        router.push("/reportestec");
-      } else {
-        router.push("/cotizaciones");
-      }
+      router.push(rutaInicio(data.usuario));
 
       router.refresh();
 

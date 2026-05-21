@@ -220,9 +220,12 @@ const CotizacionPDF: React.FC<CotizacionPDFProps> = ({ formData, itemsServicio, 
                     </View>
                     {itemsServicio.map((item) => {
                         const tarifa = tarifas.find((t) => String(t.id) === item.tarifaId);
+                        const esCostoVuelo = tarifa?.concepto.toLowerCase().includes('costo de vuelo');
                         // Bug 3 fix: use client contract rate if available
                         let precioUnitario: number;
-                        if (item.conContrato && tarifasCliente[item.tarifaId]) {
+                        if (item.esPrecioManual && item.precioManual !== undefined) {
+                            precioUnitario = item.precioManual;
+                        } else if (item.conContrato && tarifasCliente[item.tarifaId]) {
                             precioUnitario = tarifasCliente[item.tarifaId];
                         } else {
                             precioUnitario = item.conContrato ? tarifa?.precio_con_contrato || 0 : tarifa?.precio_sin_contrato || 0;
@@ -245,8 +248,8 @@ const CotizacionPDF: React.FC<CotizacionPDFProps> = ({ formData, itemsServicio, 
                                     })}
                                     {item.detalles && <Text style={pdfStyles.notaText}>{isUS ? "Note: " : "Nota: "}{item.detalles}</Text>}
                                 </View>
-                                <Text style={pdfStyles.colTiny}>{numIngenieros}</Text>
-                                <Text style={[pdfStyles.colSmall, { fontWeight: "bold" }]}>{item.cantidad}</Text>
+                                <Text style={pdfStyles.colTiny}>{esCostoVuelo ? "N/A" : numIngenieros}</Text>
+                                <Text style={[pdfStyles.colSmall, { fontWeight: "bold" }]}>{esCostoVuelo ? "N/A" : item.cantidad}</Text>
                                 <Text style={[pdfStyles.colSmall, { fontWeight: "bold" }]}>${formatCurrency(precioUnitario)}</Text>
                                 <Text style={[pdfStyles.colSmall, { fontWeight: "bold", fontSize: 9 * (itemsServicio.length <= 3 ? 1 : 0.8) }]}>${formatCurrency(item.total)}</Text>
                             </View>
@@ -792,7 +795,16 @@ const EditarCotizacionPage: React.FC = () => {
         setItemsServicio((prev) => prev.map((item) => {
             if (item.id !== id) return item;
             const updated: ServicioTarifado = { ...item };
-            if (campo === "tarifaId") updated.tarifaId = String(valor);
+            if (campo === "tarifaId") {
+                updated.tarifaId = String(valor);
+                const t = tarifasDisponibles.find((x) => String(x.id) === updated.tarifaId);
+                if (t && t.concepto.toLowerCase().includes("costo de vuelo")) {
+                    updated.esPrecioManual = true;
+                    if (updated.precioManual === undefined) {
+                        updated.precioManual = 0;
+                    }
+                }
+            }
             else if (campo === "conContrato") updated.conContrato = Boolean(valor);
             else if (campo === "detalles") updated.detalles = String(valor);
             else if (campo === "esPrecioManual") {
@@ -817,21 +829,30 @@ const EditarCotizacionPage: React.FC = () => {
                 else if (diff < 0) { updated.desglose = updated.desglose.slice(0, updated.ingenieros); }
             }
             if (tarifa) {
-                // Use client-specific contract rate if available, otherwise generic
-                let precioUnitario: number;
-                if (updated.esPrecioManual && updated.precioManual !== undefined) {
-                    precioUnitario = updated.precioManual;
-                } else if (updated.conContrato && tarifasCliente[updated.tarifaId]) {
-                    precioUnitario = tarifasCliente[updated.tarifaId];
+                const esCostoVuelo = tarifa.concepto.toLowerCase().includes('costo de vuelo');
+                if (esCostoVuelo) {
+                    // Para Costo de Vuelo: precio único = precio manual. No aplica ingenieros ni horas.
+                    updated.ingenieros = 1;
+                    updated.cantidad = 1;
+                    updated.esPrecioManual = true;
+                    updated.total = updated.precioManual || 0;
                 } else {
-                    precioUnitario = updated.conContrato ? tarifa.precio_con_contrato : tarifa.precio_sin_contrato;
-                }
-                if (requiereDesglose) {
-                    const totalHoras = updated.desglose.reduce((acc, curr) => acc + curr.horas, 0);
-                    updated.cantidad = totalHoras;
-                    updated.total = precioUnitario * totalHoras;
-                } else {
-                    updated.total = precioUnitario * updated.ingenieros * updated.cantidad;
+                    // Use client-specific contract rate if available, otherwise generic
+                    let precioUnitario: number;
+                    if (updated.esPrecioManual && updated.precioManual !== undefined) {
+                        precioUnitario = updated.precioManual;
+                    } else if (updated.conContrato && tarifasCliente[updated.tarifaId]) {
+                        precioUnitario = tarifasCliente[updated.tarifaId];
+                    } else {
+                        precioUnitario = updated.conContrato ? tarifa.precio_con_contrato : tarifa.precio_sin_contrato;
+                    }
+                    if (requiereDesglose) {
+                        const totalHoras = updated.desglose.reduce((acc, curr) => acc + curr.horas, 0);
+                        updated.cantidad = totalHoras;
+                        updated.total = precioUnitario * totalHoras;
+                    } else {
+                        updated.total = precioUnitario * updated.ingenieros * updated.cantidad;
+                    }
                 }
             } else { updated.total = 0; }
             return updated;

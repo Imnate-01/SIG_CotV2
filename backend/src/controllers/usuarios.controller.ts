@@ -1,6 +1,6 @@
 import { Request, Response } from 'express'
-// Importamos la función para crear el cliente seguro con el token del usuario
-import { createClientForUser } from '../config/supabase'
+// Importamos la función para crear el cliente seguro con el token del usuario y el admin
+import { createClientForUser, supabaseAdmin } from '../config/supabase'
 
 export class UsuariosController {
 
@@ -107,10 +107,12 @@ export class UsuariosController {
       
       if (!token) return res.status(401).json({ message: 'No token' })
 
-      const supabaseUser = createClientForUser(token);
+      // Obtenemos el usuario a partir del token
+      const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token)
+      if (userError || !user) throw new Error('Token inválido')
 
-      // Usamos la función segura para que el usuario cambie SU propia contraseña
-      const { data, error } = await supabaseUser.auth.updateUser({
+      // Usamos el cliente admin para actualizar la contraseña usando el ID del usuario
+      const { data, error } = await supabaseAdmin.auth.admin.updateUserById(user.id, {
         password: password
       })
 

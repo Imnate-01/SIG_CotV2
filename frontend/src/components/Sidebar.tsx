@@ -61,11 +61,31 @@ export default function Sidebar() {
       : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-zinc-800 dark:hover:text-gray-200"
     }`;
 
-  const esIngeniero = usuario.rol === 'ingeniero' ||
-    (usuario.departamento && (
-      usuario.departamento.toLowerCase().includes('técnico') ||
-      usuario.departamento.toLowerCase().includes('servicio')
-    ));
+  /**
+   * Detecta si el usuario pertenece al grupo de Ingeniería Aséptica / Calidad Aséptica.
+   * Aplica a roles en español e inglés:
+   * - "Aseptic Engineer", "Aseptic Engineering"
+   * - "Ingeniero Aséptico", "Ingeniería Aséptica"
+   * - "Calidad Aséptica", "Calidad"
+   * - "Intern" (practicante del área)
+   * - Cualquier rol que contenga: aseptic | aséptic | calidad | ingeniero | engineer
+   */
+  const rolLower   = (usuario.rol          || '').toLowerCase();
+  const deptLower  = (usuario.departamento || '').toLowerCase();
+
+  const ASEPTICO_KEYWORDS = [
+    'aseptic', 'aséptic',   // inglés y español
+    'calidad',               // Calidad Aséptica, etc.
+    'ingeniero', 'engineer', // ingeniero/engineer aséptico o de campo
+    'intern',                // practicante del área
+  ];
+
+  const esAseptico = ASEPTICO_KEYWORDS.some(
+    (kw) => rolLower.includes(kw) || deptLower.includes(kw)
+  );
+
+  // Alias para mantener compatibilidad con el código existente
+  const esIngeniero = esAseptico;
 
   return (
     <>
@@ -177,15 +197,14 @@ export default function Sidebar() {
           </div>
 
           {/* --- SECCIÓN SISTEMA --- */}
+          {/* Visible para TODOS los roles: configuración de idioma, ayuda y soporte */}
           <div>
             <p className="px-3 text-[11px] font-extrabold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-2">{t("system")}</p>
             <div className="space-y-1">
-              {!esIngeniero && (
-                <Link href="/configuracion" className={linkClass("/configuracion")}>
-                  <Settings size={18} />
-                  {t("settings")}
-                </Link>
-              )}
+              <Link href="/configuracion" className={linkClass("/configuracion")}>
+                <Settings size={18} />
+                {t("settings")}
+              </Link>
               <Link href="/ayuda" className={linkClass("/ayuda")}>
                 <HelpCircle size={18} />
                 {t("helpAndSupport")}
@@ -209,7 +228,7 @@ export default function Sidebar() {
                 {usuario.nombre}
               </p>
               <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate font-mono">
-                {esIngeniero ? t("fieldEngineer") : (usuario.rol || t("user"))}
+                {usuario.rol || t("user")}
               </p>
             </div>
           </div>

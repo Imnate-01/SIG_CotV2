@@ -388,7 +388,17 @@
     "stepOf": "Step {current} of {total}",
     "btnStart": "Let's go! 🚀",
     "btnNext": "Next",
-    "btnSkip": "Skip tour"
+    "btnSkip": "Skip tour",
+    "fsa_step1Title": "Welcome to Food Safety Audit!",
+    "fsa_step1Desc": "This is your tool for recording and managing food safety audits. Let us show you how it works in just a moment.",
+    "fsa_step2Title": "Audit Dashboard",
+    "fsa_step2Desc": "Here you'll find all your FSA reports: filter by status, search by folio or filler, and consult the full audit history.",
+    "fsa_step3Title": "Create a New Report",
+    "fsa_step3Desc": "Start a new FSA audit from here. Enter the filler information, complete the inspection sections, and generate the final report.",
+    "fsa_step3Action": "Create my first FSA report →",
+    "fsa_step4Title": "All set, {name}!",
+    "fsa_step4TitleGeneric": "All set!",
+    "fsa_step4Desc": "You have access to everything you need for your audits. Remember the support team is available from the Help menu. Good luck!"
   },
   "NuevaCotizacion": {
     "title": "New Quotation",

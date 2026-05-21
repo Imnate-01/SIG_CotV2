@@ -1,9 +1,25 @@
 "use client";
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { X, ChevronRight, ChevronLeft, Sparkles, FilePlus, LayoutDashboard, Users } from "lucide-react";
+import { X, ChevronRight, ChevronLeft, Sparkles, FilePlus, LayoutDashboard, ShieldCheck } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/routing";
 import { useAuthMigration } from "@/hooks/useAuthMigration";
+
+// --- Mismas keywords que Sidebar y Login para consistencia ---
+const ASEPTICO_KEYWORDS = [
+  'aseptic', 'aséptic',
+  'calidad',
+  'ingeniero', 'engineer',
+  'intern',
+];
+
+function esRolAseptico(rol?: string, departamento?: string): boolean {
+  const rolLower  = (rol          || '').toLowerCase();
+  const deptLower = (departamento || '').toLowerCase();
+  return ASEPTICO_KEYWORDS.some(
+    (kw) => rolLower.includes(kw) || deptLower.includes(kw)
+  );
+}
 
 // --- Tooltip position types ---
 type TooltipPosition = "right" | "bottom" | "center";
@@ -31,9 +47,13 @@ export default function Onboarding() {
   const tooltipRef = useRef<HTMLDivElement>(null);
 
   const userName = userData?.nombre?.split(" ")[0] || "";
+  const esAseptico = esRolAseptico(userData?.rol, userData?.departamento);
 
-  // --- Tour Steps ---
-  const steps: TourStep[] = [
+  // Clave de localStorage según el grupo, para que cada rol tenga su propio estado
+  const STORAGE_KEY = esAseptico ? "onboarding_fsa_completed" : "onboarding_completed";
+
+  // --- Pasos para usuarios de Cotizaciones (Ventas / Admin) ---
+  const commercialSteps: TourStep[] = [
     {
       targetSelector: null,
       title: t("step1Title"),
@@ -64,7 +84,7 @@ export default function Onboarding() {
       targetSelector: 'a[href*="/clientes"]',
       title: t("step4Title"),
       description: t("step4Desc"),
-      icon: <Users size={24} className="text-purple-400" />,
+      icon: <LayoutDashboard size={24} className="text-purple-400" />,
       position: "right",
       gradient: "from-purple-500 to-fuchsia-500"
     },
@@ -77,6 +97,46 @@ export default function Onboarding() {
       gradient: "from-amber-500 via-orange-500 to-rose-500"
     }
   ];
+
+  // --- Pasos para usuarios de Ingeniería Aséptica / FSA ---
+  const fsaSteps: TourStep[] = [
+    {
+      targetSelector: null,
+      title: t("fsa_step1Title"),
+      description: t("fsa_step1Desc"),
+      icon: <Sparkles size={32} className="text-emerald-300" />,
+      position: "center",
+      gradient: "from-emerald-600 via-teal-600 to-cyan-600"
+    },
+    {
+      targetSelector: 'a[href*="/food-safety-audit"]:not([href*="nuevo"]):not([href*="editar"])',
+      title: t("fsa_step2Title"),
+      description: t("fsa_step2Desc"),
+      icon: <ShieldCheck size={24} className="text-emerald-400" />,
+      position: "right",
+      gradient: "from-emerald-500 to-teal-500"
+    },
+    {
+      targetSelector: 'a[href*="/food-safety-audit/nuevo"]',
+      title: t("fsa_step3Title"),
+      description: t("fsa_step3Desc"),
+      icon: <FilePlus size={24} className="text-cyan-400" />,
+      position: "right",
+      gradient: "from-cyan-500 to-blue-500",
+      action: () => router.push("/food-safety-audit/nuevo"),
+      actionLabel: t("fsa_step3Action")
+    },
+    {
+      targetSelector: null,
+      title: userName ? t("fsa_step4Title", { name: userName }) : t("fsa_step4TitleGeneric"),
+      description: t("fsa_step4Desc"),
+      icon: <div className="text-3xl">🚀</div>,
+      position: "center",
+      gradient: "from-teal-500 via-emerald-500 to-green-500"
+    }
+  ];
+
+  const steps: TourStep[] = esAseptico ? fsaSteps : commercialSteps;
 
   const totalSteps = steps.length;
   const currentStep = steps[step];
@@ -99,12 +159,12 @@ export default function Onboarding() {
 
   // --- Show on mount ---
   useEffect(() => {
-    const tourVisto = localStorage.getItem("onboarding_completed");
+    const tourVisto = localStorage.getItem(STORAGE_KEY);
     if (!tourVisto) {
       const timer = setTimeout(() => setIsVisible(true), 800);
       return () => clearTimeout(timer);
     }
-  }, []);
+  }, [STORAGE_KEY]);
 
   // --- Re-measure on step change and resize ---
   useEffect(() => {
@@ -140,7 +200,7 @@ export default function Onboarding() {
 
   const handleClose = () => {
     setIsVisible(false);
-    localStorage.setItem("onboarding_completed", "true");
+    localStorage.setItem(STORAGE_KEY, "true");
   };
 
   if (!isVisible) return null;
