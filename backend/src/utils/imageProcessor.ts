@@ -8,6 +8,45 @@ const VERSIONS = [
   { key: 'thumb',  width: 400,  height: 300, quality: 70  },
 ] as const;
 
+// ── Garantizar que el bucket existe y es público ────────────────────────────
+// Se verifica una sola vez por proceso (flag de módulo).
+// Si el bucket no existe, lo crea como público para que las URLs funcionen.
+let bucketReady = false;
+async function ensureBucket(): Promise<void> {
+  if (bucketReady) return;
+
+  const { data: buckets, error: listErr } = await supabaseAdmin.storage.listBuckets();
+  if (listErr) {
+    console.warn('[imageProcessor] No se pudo listar buckets:', listErr.message);
+    return; // No bloqueamos la subida; puede que igual funcione
+  }
+
+  const exists = buckets?.some(b => b.name === SUPABASE_BUCKET);
+  if (!exists) {
+    const { error: createErr } = await supabaseAdmin.storage.createBucket(SUPABASE_BUCKET, {
+      public: true,          // URLs públicas sin token
+      fileSizeLimit: 20971520, // 20 MB
+      // HEIC/HEIF incluidos: sharp los convierte a JPEG automáticamente
+      allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'],
+    });
+    if (createErr) {
+      console.error('[imageProcessor] Error creando bucket:', createErr.message);
+      throw new Error(`No se pudo crear el bucket de almacenamiento: ${createErr.message}`);
+    }
+    console.log(`[imageProcessor] Bucket '${SUPABASE_BUCKET}' creado correctamente.`);
+  } else {
+    // Aseguramos que el bucket sea público (por si fue creado como privado antes)
+    const { error: updateErr } = await supabaseAdmin.storage.updateBucket(SUPABASE_BUCKET, {
+      public: true,
+    });
+    if (updateErr) {
+      console.warn('[imageProcessor] No se pudo actualizar el bucket a público:', updateErr.message);
+    }
+  }
+
+  bucketReady = true;
+}
+
 export interface ProcessedImages {
   url_original: string;
   url_report:   string;
@@ -33,17 +72,24 @@ export async function processAuditImage(
   storageKeyBase: string,
   originalSizeBytes: number
 ): Promise<ProcessedImages> {
+  // Garantizar que el bucket existe y es público antes de subir
+  await ensureBucket();
+
   // Obtener metadatos del original
   const metadata = await sharp(buffer).metadata();
   const width_px  = metadata.width  ?? 0;
   const height_px = metadata.height ?? 0;
 
   // 1. Guardar original
+  // Nota: si el archivo es HEIC/HEIF (iPhone), sharp lo decodifica automáticamente
+  // vía libvips y lo recodifica como JPEG en las versiones report/thumb.
+  // El original se guarda tal cual llega (buffer sin modificar).
+  const originalMime = ['image/heic', 'image/heif'].includes(mimeType) ? 'image/jpeg' : mimeType;
   const originalKey = `${storageKeyBase}_original.jpg`;
   const { error: origError } = await supabaseAdmin.storage
     .from(SUPABASE_BUCKET)
     .upload(originalKey, buffer, {
-      contentType: 'image/jpeg',
+      contentType: originalMime,
       upsert: true,
     });
   if (origError) throw new Error(`Error guardando original: ${origError.message}`);

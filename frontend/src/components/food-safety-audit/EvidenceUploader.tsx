@@ -31,7 +31,7 @@ interface EvidenceUploaderProps {
 }
 
 // ── Validación local ─────────────────────────────────────────────────
-const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"];
 const MAX_SIZE_BYTES = 20 * 1024 * 1024; // 20 MB
 const MIN_WIDTH = 800;
 const MIN_HEIGHT = 600;
@@ -51,18 +51,23 @@ async function getImageDimensions(file: File): Promise<{ width: number; height: 
 
 async function validateImage(file: File): Promise<string | null> {
   if (!ALLOWED_TYPES.includes(file.type)) {
-    return "Formato no soportado. Use JPEG, PNG o WEBP.";
+    return "Formato no soportado. Use JPEG, PNG, WEBP o HEIC (iPhone).";
   }
   if (file.size > MAX_SIZE_BYTES) {
     return "La imagen excede el límite de 20 MB.";
   }
-  try {
-    const dims = await getImageDimensions(file);
-    if (dims.width < MIN_WIDTH || dims.height < MIN_HEIGHT) {
-      return `Resolución insuficiente (${dims.width}×${dims.height}px). Mínimo ${MIN_WIDTH}×${MIN_HEIGHT}px para buena calidad en el PDF.`;
+  // Los archivos HEIC/HEIF no se pueden decodificar en el navegador para medir
+  // dimensiones — el backend (sharp) se encarga de la conversión y validación.
+  const isHeic = file.type === "image/heic" || file.type === "image/heif";
+  if (!isHeic) {
+    try {
+      const dims = await getImageDimensions(file);
+      if (dims.width < MIN_WIDTH || dims.height < MIN_HEIGHT) {
+        return `Resolución insuficiente (${dims.width}×${dims.height}px). Mínimo ${MIN_WIDTH}×${MIN_HEIGHT}px para buena calidad en el PDF.`;
+      }
+    } catch {
+      return "No se pudo leer la resolución de la imagen.";
     }
-  } catch {
-    return "No se pudo leer la resolución de la imagen.";
   }
   return null;
 }
@@ -206,7 +211,7 @@ export function EvidenceUploader({
           <input
             ref={inputRef}
             type="file"
-            accept="image/jpeg,image/png,image/webp"
+            accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif"
             multiple
             style={{ display: "none" }}
             onChange={e => e.target.files && handleFiles(e.target.files)}
@@ -216,7 +221,7 @@ export function EvidenceUploader({
             Arrastra fotos aquí o <span style={{ color: "#2563eb", textDecoration: "underline" }}>haz clic para seleccionar</span>
           </p>
           <p style={{ margin: "6px 0 0", fontSize: 12, color: "#94a3b8" }}>
-            JPEG / PNG / WEBP · Mín. 800×600 px · Máx. 20 MB · Hasta {maxImages} fotos
+            JPEG / PNG / WEBP / HEIC · Mín. 800×600 px · Máx. 20 MB · Hasta {maxImages} fotos
           </p>
           <p style={{ margin: "4px 0 0", fontSize: 11, color: "#94a3b8" }}>
             {images.length} de {maxImages} imágenes subidas

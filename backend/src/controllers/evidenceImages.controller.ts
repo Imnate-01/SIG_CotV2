@@ -8,9 +8,11 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 20 * 1024 * 1024 }, // 20 MB máx
   fileFilter: (_req, file, cb) => {
-    const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+    // HEIC/HEIF = formato nativo de iPhone/iPad
+    // image/heif cubre tanto .heic como .heif según RFC 8694
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
     if (allowed.includes(file.mimetype)) cb(null, true);
-    else cb(new Error('Formato no soportado. Use JPEG, PNG o WEBP.'));
+    else cb(new Error('Formato no soportado. Use JPEG, PNG, WEBP o HEIC (iPhone).'));
   },
 });
 

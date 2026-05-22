@@ -33,42 +33,80 @@ export class FoodSafetyAuditController {
       const payload = req.body;
       const currentYear = new Date().getFullYear();
 
-      // Generar folio de forma segura usando supabaseAdmin para el conteo
-      // (evita problemas de RLS al contar y garantiza una lectura consistente)
-      const { count } = await supabaseAdmin
-        .from('food_safety_audit_reports')
-        .select('id', { count: 'exact', head: true })
-        .ilike('folio', `FSA-${currentYear}-%`);
+      // ─── Generación de folio atómica con retry ───────────────────────────────
+      // Problema anterior: COUNT+1 tiene una race condition — dos requests
+      // simultáneas pueden leer el mismo count y generar el mismo folio,
+      // colisionando en la restricción UNIQUE (error 23505).
+      //
+      // Solución: leemos el MAX actual del folio para este año y reintentamos
+      // hasta 5 veces si hay colisión. Cada intento incrementa el número,
+      // garantizando convergencia sin cambios de schema.
+      // ────────────────────────────────────────────────────────────────────────
+      const MAX_RETRIES = 5;
+      let newReport: any = null;
 
-      const nextNumber = (count ?? 0) + 1;
-      const folio = `FSA-${currentYear}-${nextNumber.toString().padStart(4, '0')}`;
+      for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+        // Obtener el número máximo actual del folio para este año
+        const { data: maxRow } = await supabaseAdmin
+          .from('food_safety_audit_reports')
+          .select('folio')
+          .ilike('folio', `FSA-${currentYear}-%`)
+          .order('folio', { ascending: false })
+          .limit(1)
+          .maybeSingle();
 
-      // Insertar portada — el campo UNIQUE en `folio` actúa como red de seguridad
-      // ante una eventual colisión por concurrencia
-      const { data: newReport, error: insertError } = await supabaseUser
-        .from('food_safety_audit_reports')
-        .insert({
-          folio,
-          cliente_empresa: payload.cliente_empresa,
-          fecha_auditoria: payload.fecha_auditoria,
-          location_of_audit: payload.location_of_audit,
-          llenadora: payload.llenadora,
-          llenadora_serial: payload.llenadora_serial,
-          llenadora_horas_op: payload.llenadora_horas_op || null,
-          personas_a_cargo: payload.personas_a_cargo || [],
-          autorizacion_sig_nombre: payload.autorizacion_sig?.nombre,
-          autorizacion_sig_puesto: payload.autorizacion_sig?.puesto,
-          autorizacion_sig_empresa: payload.autorizacion_sig?.empresa,
-          autorizacion_cliente_nombre: payload.autorizacion_cliente?.nombre,
-          autorizacion_cliente_puesto: payload.autorizacion_cliente?.puesto,
-          autorizacion_cliente_empresa: payload.autorizacion_cliente?.empresa,
-          auditor_id: user.id,
-          estado: 'borrador'
-        })
-        .select()
-        .single();
+        // Extraer el número del folio más alto (ej. "FSA-2026-0004" → 4)
+        let maxNumber = 0;
+        if (maxRow?.folio) {
+          const parts = maxRow.folio.split('-');
+          maxNumber = parseInt(parts[parts.length - 1], 10) || 0;
+        }
 
-      if (insertError) throw insertError;
+        const nextNumber = maxNumber + 1 + attempt; // +attempt para escalar en retry
+        const folio = `FSA-${currentYear}-${nextNumber.toString().padStart(4, '0')}`;
+
+        const { data: inserted, error: insertError } = await supabaseUser
+          .from('food_safety_audit_reports')
+          .insert({
+            folio,
+            cliente_empresa: payload.cliente_empresa,
+            fecha_auditoria: payload.fecha_auditoria,
+            location_of_audit: payload.location_of_audit,
+            llenadora: payload.llenadora,
+            llenadora_serial: payload.llenadora_serial,
+            llenadora_horas_op: payload.llenadora_horas_op || null,
+            personas_a_cargo: payload.personas_a_cargo || [],
+            autorizacion_sig_nombre: payload.autorizacion_sig?.nombre,
+            autorizacion_sig_puesto: payload.autorizacion_sig?.puesto,
+            autorizacion_sig_empresa: payload.autorizacion_sig?.empresa,
+            autorizacion_cliente_nombre: payload.autorizacion_cliente?.nombre,
+            autorizacion_cliente_puesto: payload.autorizacion_cliente?.puesto,
+            autorizacion_cliente_empresa: payload.autorizacion_cliente?.empresa,
+            auditor_id: user.id,
+            estado: 'borrador'
+          })
+          .select()
+          .single();
+
+        // Si no hay error → éxito, salir del loop
+        if (!insertError) {
+          newReport = inserted;
+          break;
+        }
+
+        // Si el error es por folio duplicado (23505) → reintentar
+        if (insertError.code === '23505') {
+          console.warn(`[FSA] Colisión de folio en intento ${attempt + 1}: ${folio} ya existe. Reintentando...`);
+          continue;
+        }
+
+        // Cualquier otro error → propagar
+        throw insertError;
+      }
+
+      if (!newReport) {
+        throw new Error('No se pudo generar un folio único después de varios intentos. Intente nuevamente.');
+      }
 
       res.status(201).json({
         success: true,
