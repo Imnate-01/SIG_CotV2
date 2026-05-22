@@ -1239,7 +1239,7 @@ const NuevaCotizacionPage: React.FC = () => {
               value={formData.condiciones.entidad || 'MX'}
               onChange={(e) => {
                 const val = e.target.value as "MX" | "US";
-                const proveedorUS = { nombre: "SIG Combibloc Inc.", direccion: "2501 Seaport Drive - Suite 100", colonia: "", ciudad: "Chester, PA 19013", cp: "19013", rfc: "" };
+                const proveedorUS = { nombre: "SIG Combibloc Inc.", direccion: "200 W North Ave", colonia: "", ciudad: "Northlake, IL 60164", cp: "60164", rfc: "" };
                 const proveedorMX = { nombre: "SIG Combibloc México, S.A. de C.V.", direccion: "Av. Emilio Castelar No. 75", colonia: "Polanco IV Sección", ciudad: "Ciudad de México", cp: "11550", rfc: "" };
                 setFormData(prev => ({
                   ...prev,
