@@ -68,12 +68,78 @@ export default function AuditWizard({ report }: AuditWizardProps) {
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  
+
   // Ref para tener siempre el estado más reciente en los timeouts
   const wizardStateRef = useRef(wizardState);
   useEffect(() => {
     wizardStateRef.current = wizardState;
   }, [wizardState]);
+
+  // ─── Restaurar progreso guardado al montar ───────────────────────────────
+  // Si el reporte tiene wizard_data (guardado previamente), hidratamos el estado
+  // del wizard con esos datos para que el usuario pueda retomar donde lo dejó.
+  useEffect(() => {
+    const wd = (report as any).wizard_data;
+    const dbCopFindings: any[] = (report as any).cop_findings || [];
+
+    // 1. Restaurar hallazgos COP desde la tabla audit_cop_findings
+    if (dbCopFindings.length > 0) {
+      const restoredCop: Record<string, CopFindingState> = {};
+      for (const row of dbCopFindings) {
+        restoredCop[row.seccion_cop] = {
+          seccion_cop: row.seccion_cop,
+          cam_on:      row.cam_on      ?? 60,
+          cam_off:     row.cam_off     ?? 220,
+          descripcion: row.descripcion ?? '',
+          tiene_falla: row.tiene_falla ?? false,
+          cop_db_id:   row.id,
+          images:      row.images      || [],
+        };
+      }
+      setWizardState(prev => ({ ...prev, copFindings: restoredCop }));
+      // Marcar Step 1 como completado si tiene datos
+      setCompletedSteps(prev => new Set(prev).add(1));
+    }
+
+    // 2. Restaurar el resto del wizard desde wizard_data (JSONB)
+    if (!wd || typeof wd !== 'object') return;
+
+    setWizardState(prev => ({
+      ...prev,
+      dedusterValues:    wd.dedusterValues    || prev.dedusterValues,
+      h2o2Values:        wd.h2o2Values        || prev.h2o2Values,
+      h2o2Proveedor:     wd.h2o2Proveedor     ?? prev.h2o2Proveedor,
+      h2o2Tipo:          wd.h2o2Tipo          ?? prev.h2o2Tipo,
+      h2o2Concentracion: wd.h2o2Concentracion ?? prev.h2o2Concentracion,
+      preheatingValues:  wd.preheatingValues  || prev.preheatingValues,
+      cipValues:         wd.cipValues         || prev.cipValues,
+      cipFlows:          wd.cipFlows          || prev.cipFlows,
+      miscValues:        wd.miscValues        || prev.miscValues,
+      observacionesGen:  wd.observacionesGen  ?? prev.observacionesGen,
+    }));
+
+    // Marcar como completados los pasos que ya tenían datos
+    const filled = new Set<number>();
+    if (wd.dedusterValues    && Object.keys(wd.dedusterValues).length)    filled.add(2);
+    if (wd.h2o2Values        && Object.keys(wd.h2o2Values).length)        filled.add(3);
+    if (wd.preheatingValues  && Object.keys(wd.preheatingValues).length)  filled.add(4);
+    if (wd.cipValues         && Object.keys(wd.cipValues).length)         filled.add(5);
+    if (wd.miscValues        && Object.keys(wd.miscValues).length)        filled.add(6);
+    if (filled.size > 0) setCompletedSteps(prev => new Set([...prev, ...filled]));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [report.id]);
+
+  // ─── Aviso si cierra pestaña con guardado en vuelo ──────────────────────
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (saveStatus === 'saving') {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [saveStatus]);
 
   const STEPS: WizardStep[] = [
     { id: 1, label: "COP",                    sublabel: "Cleaning Out of Place",       completed: completedSteps.has(1) },
@@ -84,30 +150,37 @@ export default function AuditWizard({ report }: AuditWizardProps) {
     { id: 6, label: "Misceláneos",             sublabel: "Resumen y cierre",            completed: completedSteps.has(6) },
   ];
 
-  // ─── Auto-save al cambiar el estado (debounce 2s) ───
+  // ─── Auto-save al cambiar el estado (debounce 2s) ───────────────────────
+  // Guarda el payload COMPLETO (todos los pasos) para que al recargar
+  // la página se pueda restaurar todo el progreso del wizard.
   const triggerAutoSave = useCallback(() => {
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     setSaveStatus("saving");
     saveTimerRef.current = setTimeout(async () => {
       try {
-        // Usamos el ref para enviar el estado más actual, no el viejo del closure
-        const currentCopFindings = wizardStateRef.current.copFindings;
+        const s = wizardStateRef.current;
         const payload = {
-          copFindings: currentCopFindings,
+          copFindings:       s.copFindings,
+          dedusterValues:    s.dedusterValues,
+          h2o2Values:        s.h2o2Values,
+          h2o2Proveedor:     s.h2o2Proveedor,
+          h2o2Tipo:          s.h2o2Tipo,
+          h2o2Concentracion: s.h2o2Concentracion,
+          preheatingValues:  s.preheatingValues,
+          cipValues:         s.cipValues,
+          cipFlows:          s.cipFlows,
+          miscValues:        s.miscValues,
+          observacionesGen:  s.observacionesGen,
         };
         const res = await foodSafetyAuditApi.saveWizard(report.id, payload);
         if (res.data?.success) {
-          // Solo actualizamos los IDs que nos devuelve la base de datos, 
-          // respetando las imágenes u otros datos que el usuario haya agregado mientras guardaba
+          // Actualizar solo los cop_db_ids devueltos, sin pisar el resto del estado
           setWizardState(prev => {
             const nextCop = { ...prev.copFindings };
-            const returnedCop = res.data.data.copFindings;
+            const returnedCop = res.data.data?.copFindings || {};
             for (const key of Object.keys(returnedCop)) {
               if (nextCop[key]) {
-                nextCop[key] = {
-                  ...nextCop[key],
-                  cop_db_id: returnedCop[key].cop_db_id
-                };
+                nextCop[key] = { ...nextCop[key], cop_db_id: returnedCop[key].cop_db_id };
               }
             }
             return { ...prev, copFindings: nextCop };

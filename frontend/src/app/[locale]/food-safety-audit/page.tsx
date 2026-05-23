@@ -2,11 +2,12 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { 
   ShieldCheck, Plus, Search, Filter,
   Loader2, RefreshCw, Trash2, ChevronRight, BarChart3,
-  Clock, CheckCircle2, FileText, AlertTriangle, X
+  Clock, CheckCircle2, FileText, AlertTriangle, X, PlayCircle, Download
 } from "lucide-react";
 import { foodSafetyAuditApi } from "@/services/foodSafetyAudit";
 
@@ -96,6 +97,7 @@ function ErrorToast({ message, onClose }: ToastProps) {
 // ─── Página principal ────────────────────────────────────────────────────────
 export default function FoodSafetyAuditPage() {
   const t = useTranslations("FoodSafetyAudit");
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
   const [reports, setReports] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -339,11 +341,23 @@ export default function FoodSafetyAuditPage() {
                 </tr>
               ) : (
                 filteredReports.map((report) => (
-                  <tr key={report.id} className="hover:bg-slate-50/80 transition-colors group">
+                  <tr
+                    key={report.id}
+                    className="hover:bg-blue-50/40 transition-colors group cursor-pointer"
+                    onClick={() => router.push(`/food-safety-audit/${report.id}`)}
+                  >
                     <td className="p-5">
-                      <span className="inline-flex items-center px-3 py-1 bg-slate-100 text-slate-800 font-mono text-sm font-bold rounded-lg border border-slate-200">
-                        {report.folio}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        {report.estado === 'borrador' && (
+                          <span className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                          </span>
+                        )}
+                        <span className="inline-flex items-center px-3 py-1 bg-slate-100 text-slate-800 font-mono text-sm font-bold rounded-lg border border-slate-200">
+                          {report.folio}
+                        </span>
+                      </div>
                     </td>
                     <td className="p-5">
                       <div className="font-medium text-slate-900">{report.llenadora || '—'}</div>
@@ -366,11 +380,11 @@ export default function FoodSafetyAuditPage() {
                     </td>
                     <td className="p-5">
                       <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide
-                        ${report.estado === 'borrador' ? 'bg-slate-100 text-slate-600 border border-slate-200' : 
+                        ${report.estado === 'borrador' ? 'bg-blue-50 text-blue-700 border border-blue-200' : 
                           report.estado === 'en_revision' ? 'bg-amber-50 text-amber-700 border border-amber-200' : 
                           'bg-emerald-50 text-emerald-700 border border-emerald-200'}`}
                       >
-                        {report.estado === 'borrador' && <div className="w-1.5 h-1.5 rounded-full bg-slate-400"></div>}
+                        {report.estado === 'borrador' && <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>}
                         {report.estado === 'en_revision' && <div className="w-1.5 h-1.5 rounded-full bg-amber-500"></div>}
                         {report.estado === 'finalizado' && <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>}
                         {report.estado === 'borrador' ? t("statusDraft") :
@@ -378,13 +392,24 @@ export default function FoodSafetyAuditPage() {
                          t("statusCompleted")}
                       </span>
                     </td>
-                    <td className="p-5">
-                      <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        {/* Fix #11: usa modal personalizado en lugar de window.confirm */}
+                    <td className="p-5" onClick={e => e.stopPropagation()}>
+                      <div className="flex items-center justify-end gap-2">
+                        {/* Botón principal según estado */}
+                        {report.estado === 'borrador' && (
+                          <Link
+                            href={`/food-safety-audit/${report.id}`}
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-sm shadow-blue-600/20"
+                            title="Continuar llenando el reporte"
+                          >
+                            <PlayCircle className="w-3.5 h-3.5" />
+                            Continuar
+                          </Link>
+                        )}
+                        {/* Eliminar */}
                         <button
                           onClick={() => handleDeleteClick(report.id, report.folio)}
                           disabled={isDeleting === report.id}
-                          className="p-2 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors disabled:opacity-50"
+                          className="p-2 text-red-500 bg-red-50 hover:bg-red-100 rounded-lg transition-colors disabled:opacity-50 opacity-0 group-hover:opacity-100"
                           title="Eliminar reporte"
                         >
                           {isDeleting === report.id ? (

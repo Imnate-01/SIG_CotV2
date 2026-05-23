@@ -175,6 +175,19 @@ export class FoodSafetyAuditController {
         return res.status(404).json({ success: false, error: 'Reporte no encontrado o sin acceso' });
       }
 
+      // Cargar también los hallazgos COP con sus imágenes de evidencia
+      // para que el wizard pueda restaurar el Step 1 al retomar un borrador
+      const { data: copFindings } = await supabaseUser
+        .from('audit_cop_findings')
+        .select('*, audit_evidence_images(*)')
+        .eq('audit_id', id)
+        .order('id');
+
+      data.cop_findings = (copFindings || []).map((f: any) => ({
+        ...f,
+        images: f.audit_evidence_images || []
+      }));
+
       res.json({ success: true, data });
     } catch (error: any) {
       res.status(500).json({ success: false, error: error.message });
