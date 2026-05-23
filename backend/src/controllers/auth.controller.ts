@@ -1,5 +1,31 @@
 import { Request, Response } from "express";
-import { supabaseAnon, supabaseAdmin } from "../config/supabase"; // Importamos los clientes seguros
+import { supabaseAnon, supabaseAdmin } from "../config/supabase";
+
+// POST /api/auth/refresh
+export const refreshToken = async (req: Request, res: Response) => {
+  try {
+    const { refresh_token } = req.body;
+    if (!refresh_token) {
+      return res.status(400).json({ message: 'Falta el refresh_token' });
+    }
+
+    const { data, error } = await supabaseAnon.auth.refreshSession({ refresh_token });
+
+    if (error || !data.session) {
+      return res.status(401).json({ message: 'Sesión expirada. Inicia sesión nuevamente.' });
+    }
+
+    // Devolver los nuevos tokens al cliente
+    res.json({
+      token:         data.session.access_token,
+      refresh_token: data.session.refresh_token,
+      expires_in:    data.session.expires_in,
+    });
+  } catch (error: any) {
+    console.error('Error refresh token:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
 
 // POST /api/auth/register
 export const registrarUsuario = async (req: Request, res: Response) => {
@@ -109,8 +135,9 @@ export const loginUsuario = async (req: Request, res: Response) => {
     }
 
     res.json({
-      message: "Login correcto",
-      token: data.session.access_token,
+      message:       "Login correcto",
+      token:         data.session.access_token,
+      refresh_token: data.session.refresh_token,   // ← el cliente lo guarda para auto-renovación
       usuario: {
         id: data.user.id,
         email: data.user.email,

@@ -3,6 +3,7 @@
 import { FormEvent, useState, useEffect } from "react";
 import { useRouter } from "@/i18n/routing";
 import { useTranslations } from "next-intl";
+import { useSearchParams } from "next/navigation";
 import Cookies from "js-cookie";
 import { toast } from "sonner";
 import { Eye, EyeOff } from "lucide-react";
@@ -36,6 +37,7 @@ function rutaInicio(usuario: { rol?: string; departamento?: string }): string {
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -45,6 +47,14 @@ export default function LoginPage() {
   // Efecto para cargar el email recordado + warm-up del backend
   useEffect(() => {
     if (typeof window === "undefined") return;
+
+    // Mostrar aviso si la sesión expiró y el usuario fue redirigido automáticamente
+    if (searchParams?.get('expired') === '1') {
+      toast.warning('Sesión expirada', {
+        description: 'Tu sesión ha expirado. Por favor inicia sesión nuevamente.',
+        duration: 6000,
+      });
+    }
 
     // Solo la cookie es fuente de verdad (el middleware del servidor la valida)
     const token = Cookies.get("auth_token");
@@ -68,7 +78,7 @@ export default function LoginPage() {
       setEmail(savedEmail);
       setRemember(true);
     }
-  }, []);
+  }, [searchParams]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -99,7 +109,8 @@ export default function LoginPage() {
 
       if (typeof window !== "undefined") {
         Cookies.set("auth_token", data.token, { expires: remember ? 30 : 1 });
-        localStorage.setItem("auth_token", data.token);
+        localStorage.setItem("auth_token",    data.token);
+        localStorage.setItem("refresh_token", data.refresh_token);   // ← para auto-renovación
         localStorage.setItem("user_data", JSON.stringify(data.usuario));
         localStorage.removeItem("user");
 
