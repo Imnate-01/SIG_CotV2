@@ -8,6 +8,8 @@ import { useTranslations } from "next-intl";
 interface ClienteDireccion {
   id?: number;
   nombre_ubicacion?: string;
+  empresa_planta_nombre?: string;
+  tipo?: string;
   direccion?: string;
   colonia?: string;
   ciudad?: string;
@@ -87,7 +89,10 @@ export default function ClientesPage() {
         correo: cliente.correo ?? "",
         telefono: cliente.telefono ?? "",
         pais: cliente.pais ?? "MX",
-        cliente_direcciones: cliente.cliente_direcciones || [],
+        cliente_direcciones: (cliente.cliente_direcciones || []).map(d => ({
+          ...d,
+          nombre_ubicacion: d.empresa_planta_nombre || d.nombre_ubicacion || "",
+        })),
       });
     } else {
       setClienteEditando(null);
@@ -133,11 +138,21 @@ export default function ClientesPage() {
   const handleGuardar = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      // Mapear los datos de las direcciones antes de enviar al backend
+      const datosAEnviar = {
+        ...formData,
+        cliente_direcciones: formData.cliente_direcciones.map(d => ({
+          ...d,
+          empresa_planta_nombre: d.nombre_ubicacion || d.empresa_planta_nombre || "Principal",
+          tipo: d.tipo || "ship_to"
+        }))
+      };
+
       if (clienteEditando) {
-        await api.put(`/clientes/${clienteEditando.id}`, formData);
+        await api.put(`/clientes/${clienteEditando.id}`, datosAEnviar);
         toast.success(t("successSaved"));
       } else {
-        await api.post("/clientes", formData);
+        await api.post("/clientes", datosAEnviar);
         toast.success(t("successCreated"));
       }
       setModalAbierto(false);
@@ -281,7 +296,7 @@ export default function ClientesPage() {
                         <div className="w-1.5 h-1.5 rounded-full bg-blue-400 dark:bg-blue-600 shrink-0 mt-1.5 -ml-[5px]" />
                         <div className="flex-1 min-w-0">
                           <span className="block truncate font-medium text-gray-600 dark:text-gray-400 text-[11px] mb-0.5">
-                            {dir.nombre_ubicacion || `Sucursal ${idx + 1}`}
+                            {dir.empresa_planta_nombre || dir.nombre_ubicacion || `Sucursal ${idx + 1}`}
                           </span>
                           <span className="block truncate text-[11px] text-gray-400 dark:text-gray-500">
                             {dir.ciudad || "Sin ciudad"}{dir.colonia ? `, ${dir.colonia}` : ""}

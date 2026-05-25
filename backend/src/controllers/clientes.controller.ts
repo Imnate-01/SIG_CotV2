@@ -53,13 +53,19 @@ export class ClientesController {
       if (cliente_direcciones && Array.isArray(cliente_direcciones) && cliente_direcciones.length > 0) {
         const direccionesToInsert = cliente_direcciones.map((d: any) => ({
           cliente_id: data.id,
-          nombre_ubicacion: d.nombre_ubicacion || 'Principal',
+          empresa_planta_nombre: d.empresa_planta_nombre || d.nombre_ubicacion || 'Principal',
+          tipo: d.tipo || 'ship_to',
           direccion: d.direccion,
           colonia: d.colonia,
           ciudad: d.ciudad,
-          cp: d.cp
+          cp: d.cp,
+          contacto_nombre: d.contacto_nombre || null,
+          contacto_correo: d.contacto_correo || null,
+          contacto_telefono: d.contacto_telefono || null,
+          activo: d.activo !== undefined ? d.activo : true
         }));
-        await supabaseUser.from('cliente_direcciones').insert(direccionesToInsert);
+        const { error: insertError } = await supabaseUser.from('cliente_direcciones').insert(direccionesToInsert);
+        if (insertError) throw insertError;
       }
 
       res.status(201).json({ success: true, data })
@@ -89,18 +95,25 @@ export class ClientesController {
 
       if (cliente_direcciones && Array.isArray(cliente_direcciones)) {
         // Simple sync strategy: Delete existing and insert new ones
-        await supabaseUser.from('cliente_direcciones').delete().eq('cliente_id', id);
+        const { error: deleteError } = await supabaseUser.from('cliente_direcciones').delete().eq('cliente_id', id);
+        if (deleteError) throw deleteError;
         
         if (cliente_direcciones.length > 0) {
           const direccionesToInsert = cliente_direcciones.map((d: any) => ({
             cliente_id: id,
-            nombre_ubicacion: d.nombre_ubicacion || 'Principal',
+            empresa_planta_nombre: d.empresa_planta_nombre || d.nombre_ubicacion || 'Principal',
+            tipo: d.tipo || 'ship_to',
             direccion: d.direccion,
             colonia: d.colonia,
             ciudad: d.ciudad,
-            cp: d.cp
+            cp: d.cp,
+            contacto_nombre: d.contacto_nombre || null,
+            contacto_correo: d.contacto_correo || null,
+            contacto_telefono: d.contacto_telefono || null,
+            activo: d.activo !== undefined ? d.activo : true
           }));
-          await supabaseUser.from('cliente_direcciones').insert(direccionesToInsert);
+          const { error: insertError } = await supabaseUser.from('cliente_direcciones').insert(direccionesToInsert);
+          if (insertError) throw insertError;
         }
       }
 
