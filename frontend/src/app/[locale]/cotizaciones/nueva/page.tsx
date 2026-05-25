@@ -502,11 +502,15 @@ const ModalVistaPrevia: React.FC<ModalVistaPreviaProps> = ({ isOpen, onClose, fo
         />
       ).toBlob();
 
+      const isUS = formData.condiciones.entidad === "US" || formData.condiciones.entidad === "CA";
+      const baseName = isUS ? "Quote" : "Cotizacion";
+      const draftName = isUS ? "Draft" : "Borrador";
+
       if (!reporteTecnico) {
         const url = URL.createObjectURL(quoteBlob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `Cotizacion_${folio || 'Borrador'}.pdf`;
+        link.download = `${baseName}_${folio || draftName}.pdf`;
         link.click();
         setIsMerging(false);
         return;
@@ -526,7 +530,7 @@ const ModalVistaPrevia: React.FC<ModalVistaPreviaProps> = ({ isOpen, onClose, fo
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `Cotizacion_${folio || 'Borrador'}_FULL.pdf`;
+      link.download = `${baseName}_${folio || draftName}_FULL.pdf`;
       link.click();
       URL.revokeObjectURL(url);
 
@@ -557,7 +561,7 @@ const ModalVistaPrevia: React.FC<ModalVistaPreviaProps> = ({ isOpen, onClose, fo
             ) : (
               <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-500">
                 <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-                <p>Generando vista previa...</p>
+                <p>{t("loadingPreview")}</p>
               </div>
             )}
           </div>
@@ -1233,7 +1237,7 @@ const NuevaCotizacionPage: React.FC = () => {
 
           <div className="mt-6 pt-6 border-t border-gray-100 dark:border-zinc-800">
             <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-              Entidad Emisora
+              {t("issuingEntity")}
             </label>
             <select
               value={formData.condiciones.entidad || 'MX'}
@@ -1251,8 +1255,8 @@ const NuevaCotizacionPage: React.FC = () => {
               }}
               className="premium-select w-full md:w-1/2 lg:w-1/3 px-4 py-3 border-2 border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded-xl text-gray-900 dark:text-white focus:border-amber-500 focus:outline-none transition-colors"
             >
-              <option value="MX">SIG MX (México)</option>
-              <option value="US">SIG US (Estados Unidos)</option>
+              <option value="MX">{t("entityMX")}</option>
+              <option value="US">{t("entityUS")}</option>
             </select>
             <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
               ({t("currency")}: {formData.condiciones.entidad === "US" ? "USD" : formData.condiciones.moneda})
@@ -1297,9 +1301,9 @@ const NuevaCotizacionPage: React.FC = () => {
 
             {direccionesSoldTo.length > 0 && (
               <div className="animate-fadeIn">
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Facturar A (Sold To)</label>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">{t("billToSoldTo")}</label>
                 <select value={soldToSeleccionadoId} onChange={(e) => handleSelectSoldTo(e.target.value)} className="premium-select w-full px-4 py-3 border-2 border-gray-200 dark:border-zinc-700 rounded-xl text-gray-900 dark:text-white bg-white dark:bg-zinc-800 focus:border-blue-500 focus:outline-none transition-colors">
-                  <option value="">Seleccione Razón Social</option>
+                  <option value="">{t("selectBusinessName")}</option>
                   {direccionesSoldTo.map((d) => (
                     <option key={d.id} value={d.id}>{d.empresa_planta_nombre} - {d.ciudad}</option>
                   ))}
@@ -1351,7 +1355,7 @@ const NuevaCotizacionPage: React.FC = () => {
             <div className="animate-fadeIn">
               <div className="mb-6">
                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                  {direccionesShipTo.length > 0 ? "Seleccionar Planta (Ship To)" : t("shipSelectKnown")}
+                  {direccionesShipTo.length > 0 ? t("selectPlantShipTo") : t("shipSelectKnown")}
                 </label>
                 <select value={shipToSeleccionadoId} onChange={(e) => handleSelectShipTo(e.target.value)} className="premium-select w-full px-4 py-3 border-2 border-gray-200 dark:border-zinc-700 rounded-xl text-gray-900 dark:text-white bg-white dark:bg-zinc-800 focus:border-teal-500 focus:outline-none transition-colors">
                   <option value="">{t("shipSelectPlaceholder")}</option>
@@ -1418,14 +1422,14 @@ const NuevaCotizacionPage: React.FC = () => {
                       <select value={item.tarifaId} onChange={(e) => actualizarLineaServicio(item.id, "tarifaId", e.target.value)} className="premium-select w-full px-3 py-2 border-2 border-gray-200 dark:border-zinc-700 rounded-lg text-gray-900 dark:text-white focus:border-blue-500 focus:outline-none bg-white dark:bg-zinc-800">
                         <option value="">{t("selectRate")}</option>
                         {/* RENDERIZADO DINÁMICO POR TIPOS */}
-                        <optgroup label="Servicio Técnico">
-                          {tarifasDisponibles.filter(t => t.categoria === 'Servicio Técnico').map((t) => (<option key={t.id} value={t.id}>{t.concepto}</option>))}
+                        <optgroup label={t("categoryTechService")}>
+                          {tarifasDisponibles.filter(tar => tar.categoria === 'Servicio Técnico').map((tar) => (<option key={tar.id} value={tar.id}>{tar.concepto}</option>))}
                         </optgroup>
-                        <optgroup label="Servicio de Ingeniería Aséptica">
-                          {tarifasDisponibles.filter(t => t.categoria === 'Servicio de Ingeniería Aséptica').map((t) => (<option key={t.id} value={t.id}>{t.concepto}</option>))}
+                        <optgroup label={t("categoryAseptic")}>
+                          {tarifasDisponibles.filter(tar => tar.categoria === 'Servicio de Ingeniería Aséptica').map((tar) => (<option key={tar.id} value={tar.id}>{tar.concepto}</option>))}
                         </optgroup>
-                        <optgroup label="Gastos de Viaje">
-                          {tarifasDisponibles.filter(t => t.categoria === 'Gastos de Viaje').map((t) => (<option key={t.id} value={t.id}>{t.concepto}</option>))}
+                        <optgroup label={t("categoryTravelExpenses")}>
+                          {tarifasDisponibles.filter(tar => tar.categoria === 'Gastos de Viaje').map((tar) => (<option key={tar.id} value={tar.id}>{tar.concepto}</option>))}
                         </optgroup>
                       </select>
                     </div>
@@ -1448,7 +1452,7 @@ const NuevaCotizacionPage: React.FC = () => {
                       <div className="flex items-center bg-gray-100 dark:bg-zinc-800/50 rounded-lg p-1 ml-2">
                         <label className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold cursor-pointer transition-all ${item.esPrecioManual ? 'bg-white text-blue-600 dark:bg-zinc-700 dark:text-blue-400 shadow-sm border border-gray-200 dark:border-zinc-600' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 border border-transparent'}`}>
                           <input type="checkbox" className="sr-only" checked={!!item.esPrecioManual} onChange={(e) => actualizarLineaServicio(item.id, "esPrecioManual", e.target.checked)} /> 
-                          {item.esPrecioManual ? <Edit2 size={14} /> : null} Precio Manual
+                          {item.esPrecioManual ? <Edit2 size={14} /> : null} {t("manualPrice")}
                         </label>
                       </div>
                       
@@ -1462,7 +1466,7 @@ const NuevaCotizacionPage: React.FC = () => {
                       {tarifa && !item.esPrecioManual && (
                         <span className="text-xs text-gray-500 dark:text-gray-400 ml-2 hidden sm:inline">
                           (${(item.conContrato && tarifasCliente[tarifa.id] ? tarifasCliente[tarifa.id] : (item.conContrato ? tarifa.precio_con_contrato : tarifa.precio_sin_contrato)).toFixed(2)} / {tarifa.unidad})
-                          {item.conContrato && tarifasCliente[tarifa.id] && <span className="ml-1 text-blue-500 font-bold">(Tarifa Especial)</span>}
+                          {item.conContrato && tarifasCliente[tarifa.id] && <span className="ml-1 text-blue-500 font-bold">{t("specialRate")}</span>}
                         </span>
                       )}
                     </div>
@@ -1495,12 +1499,12 @@ const NuevaCotizacionPage: React.FC = () => {
             ) : (
               <>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Scope of visit</label>
-                  <input type="text" value={formData.condiciones.scopeOfVisit || ""} onChange={(e) => handleInputChange("condiciones", "scopeOfVisit", e.target.value)} className="w-full px-4 py-3 border-2 border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded-xl text-gray-900 dark:text-white placeholder:text-gray-400 focus:border-blue-500 focus:outline-none transition-colors" placeholder="Enter scope of visit..." />
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">{t("scopeOfVisit")}</label>
+                  <input type="text" value={formData.condiciones.scopeOfVisit || ""} onChange={(e) => handleInputChange("condiciones", "scopeOfVisit", e.target.value)} className="w-full px-4 py-3 border-2 border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded-xl text-gray-900 dark:text-white placeholder:text-gray-400 focus:border-blue-500 focus:outline-none transition-colors" placeholder={t("scopeOfVisitPlaceholder")} />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Equipment to be Serviced</label>
-                  <input type="text" value={formData.condiciones.equipmentToService || ""} onChange={(e) => handleInputChange("condiciones", "equipmentToService", e.target.value)} className="w-full px-4 py-3 border-2 border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded-xl text-gray-900 dark:text-white placeholder:text-gray-400 focus:border-blue-500 focus:outline-none transition-colors" placeholder="Enter equipment details..." />
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">{t("equipmentToService")}</label>
+                  <input type="text" value={formData.condiciones.equipmentToService || ""} onChange={(e) => handleInputChange("condiciones", "equipmentToService", e.target.value)} className="w-full px-4 py-3 border-2 border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded-xl text-gray-900 dark:text-white placeholder:text-gray-400 focus:border-blue-500 focus:outline-none transition-colors" placeholder={t("equipmentToServicePlaceholder")} />
                 </div>
               </>
             )}
@@ -1511,15 +1515,15 @@ const NuevaCotizacionPage: React.FC = () => {
                   value={formData.condiciones.maquina}
                   onChange={(val) => handleInputChange("condiciones", "maquina", val)}
                   machines={maquinasFiltradas}
-                  placeholder={shipToSeleccionadoId ? "Buscar máquina de esta planta..." : "Selecciona un Ship To para filtrar máquinas..."}
+                  placeholder={shipToSeleccionadoId ? t("searchMachineInPlant") : t("selectShipToFilter")}
                 />
               ) : (
-                <textarea rows={2} value={formData.condiciones.maquina} onChange={(e) => handleInputChange("condiciones", "maquina", e.target.value)} className="w-full px-4 py-3 border-2 border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded-xl text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:border-blue-500 focus:outline-none transition-colors" placeholder={formData.condiciones.entidad === "US" ? "CFA 406-32\n850451014" : t("machinePlaceholder")} />
+                <textarea rows={2} value={formData.condiciones.maquina} onChange={(e) => handleInputChange("condiciones", "maquina", e.target.value)} className="w-full px-4 py-3 border-2 border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded-xl text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:border-blue-500 focus:outline-none transition-colors" placeholder={formData.condiciones.entidad === "US" ? t("machinePlaceholderUS") : t("machinePlaceholder")} />
               )}
               {shipToSeleccionadoId && maquinasFiltradas.length > 0 && (
                 <p className="text-xs text-teal-600 dark:text-teal-400 mt-1.5 flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-teal-500 inline-block"></span>
-                  Mostrando {maquinasFiltradas.length} máquina{maquinasFiltradas.length !== 1 ? 's' : ''} de la planta seleccionada
+                  {t("showingMachinesCount", { count: maquinasFiltradas.length })}
                 </p>
               )}
             </div>
@@ -1536,8 +1540,8 @@ const NuevaCotizacionPage: React.FC = () => {
             {formData.condiciones.entidad === "US" && (
               <>
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Payment Terms</label>
-                  <input type="text" value={formData.condiciones.paymentTerms || ""} onChange={(e) => handleInputChange("condiciones", "paymentTerms", e.target.value)} className="w-full px-4 py-3 border-2 border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded-xl text-gray-900 dark:text-white placeholder:text-gray-400 focus:border-blue-500 focus:outline-none transition-colors" placeholder="Enter payment terms..." />
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">{t("paymentTerms")}</label>
+                  <input type="text" value={formData.condiciones.paymentTerms || ""} onChange={(e) => handleInputChange("condiciones", "paymentTerms", e.target.value)} className="w-full px-4 py-3 border-2 border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded-xl text-gray-900 dark:text-white placeholder:text-gray-400 focus:border-blue-500 focus:outline-none transition-colors" placeholder={t("paymentTermsPlaceholder")} />
                 </div>
               </>
             )}
