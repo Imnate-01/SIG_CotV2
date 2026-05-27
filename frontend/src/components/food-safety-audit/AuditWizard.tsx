@@ -10,6 +10,7 @@ import { Step2Dedusting } from "@/components/food-safety-audit/Step2Dedusting";
 import { Step3H2O2 } from "@/components/food-safety-audit/Step3H2O2";
 import { Step4Preheating } from "@/components/food-safety-audit/Step4Preheating";
 import { Step5CIP, CipFlowRowExport } from "@/components/food-safety-audit/Step5CIP";
+import { EvidenceImageItem } from "@/components/food-safety-audit/EvidenceUploader";
 import { Step6Misc } from "@/components/food-safety-audit/Step6Misc";
 
 interface AuditReport {
@@ -36,6 +37,8 @@ interface WizardState {
   // CIP
   cipValues: Record<string, number | null>;
   cipFlows: CipFlowRowExport[];
+  // Imágenes por paso (keyed by step param_id: 2=Dedusting, 3=H2O2, 4=Preheating, 5=CIP)
+  stepImages: Record<number, EvidenceImageItem[]>;
   // Misceláneos
   miscValues: Record<string, string | number | null>;
   observacionesGen: string;
@@ -51,6 +54,7 @@ const INITIAL_STATE: WizardState = {
   preheatingValues: {},
   cipValues: {},
   cipFlows: [],
+  stepImages: {},
   miscValues: {},
   observacionesGen: "",
 };
@@ -101,7 +105,17 @@ export default function AuditWizard({ report }: AuditWizardProps) {
       setCompletedSteps(prev => new Set(prev).add(1));
     }
 
-    // 2. Restaurar el resto del wizard desde wizard_data (JSONB)
+    // 2. Restaurar imágenes de pasos (param_id 2-5) desde step_images
+    const rawStepImages = (report as any).step_images || {};
+    const restoredStepImages: Record<number, EvidenceImageItem[]> = {};
+    for (const [key, imgs] of Object.entries(rawStepImages)) {
+      restoredStepImages[Number(key)] = imgs as EvidenceImageItem[];
+    }
+    if (Object.keys(restoredStepImages).length > 0) {
+      setWizardState(prev => ({ ...prev, stepImages: restoredStepImages }));
+    }
+
+    // 3. Restaurar el resto del wizard desde wizard_data (JSONB)
     if (!wd || typeof wd !== 'object') return;
 
     setWizardState(prev => ({
@@ -236,6 +250,44 @@ export default function AuditWizard({ report }: AuditWizardProps) {
     triggerAutoSave();
   }, [triggerAutoSave]);
 
+  // Imágenes por paso (sin auto-save: se guardan directamente en la BD)
+  const handleStepImageUploaded = useCallback((step: number, img: EvidenceImageItem) => {
+    setWizardState(prev => ({
+      ...prev,
+      stepImages: { ...prev.stepImages, [step]: [...(prev.stepImages[step] || []), img] }
+    }));
+  }, []);
+
+  const handleStepImageDeleted = useCallback((step: number, imgId: number) => {
+    setWizardState(prev => ({
+      ...prev,
+      stepImages: { ...prev.stepImages, [step]: (prev.stepImages[step] || []).filter(i => i.id !== imgId) }
+    }));
+  }, []);
+
+  const handleStepImageCaptionChange = useCallback((step: number, imgId: number, caption: string) => {
+    setWizardState(prev => ({
+      ...prev,
+      stepImages: {
+        ...prev.stepImages,
+        [step]: (prev.stepImages[step] || []).map(i => i.id === imgId ? { ...i, caption } : i)
+      }
+    }));
+  }, []);
+
+  const handleStepImageReplaced = useCallback((step: number, oldId: number, newImg: EvidenceImageItem) => {
+    setWizardState(prev => {
+      const current = prev.stepImages[step] || [];
+      return {
+        ...prev,
+        stepImages: {
+          ...prev.stepImages,
+          [step]: [...current.filter(i => i.id !== oldId), newImg]
+        }
+      };
+    });
+  }, []);
+
   // Actualizar Misceláneos
   const handleMiscChange = useCallback((key: string, val: string | number | null) => {
     setWizardState(prev => ({ ...prev, miscValues: { ...prev.miscValues, [key]: val } }));
@@ -351,6 +403,12 @@ export default function AuditWizard({ report }: AuditWizardProps) {
           <Step2Dedusting
             values={wizardState.dedusterValues}
             onChange={handleDedusterChange}
+            auditId={report.id}
+            images={wizardState.stepImages[2] || []}
+            onImageUploaded={(img) => handleStepImageUploaded(2, img)}
+            onImageDeleted={(id) => handleStepImageDeleted(2, id)}
+            onImageReplaced={(oldId, newImg) => handleStepImageReplaced(2, oldId, newImg)}
+            onImageCaptionChange={(id, cap) => handleStepImageCaptionChange(2, id, cap)}
           />
         );
       case 3:
@@ -362,6 +420,12 @@ export default function AuditWizard({ report }: AuditWizardProps) {
             h2o2Tipo={wizardState.h2o2Tipo}
             h2o2Concentracion={wizardState.h2o2Concentracion}
             onMetaChange={handleH2O2MetaChange}
+            auditId={report.id}
+            images={wizardState.stepImages[3] || []}
+            onImageUploaded={(img) => handleStepImageUploaded(3, img)}
+            onImageDeleted={(id) => handleStepImageDeleted(3, id)}
+            onImageReplaced={(oldId, newImg) => handleStepImageReplaced(3, oldId, newImg)}
+            onImageCaptionChange={(id, cap) => handleStepImageCaptionChange(3, id, cap)}
           />
         );
       case 4:
@@ -369,6 +433,12 @@ export default function AuditWizard({ report }: AuditWizardProps) {
           <Step4Preheating
             values={wizardState.preheatingValues}
             onChange={handlePreheatingChange}
+            auditId={report.id}
+            images={wizardState.stepImages[4] || []}
+            onImageUploaded={(img) => handleStepImageUploaded(4, img)}
+            onImageDeleted={(id) => handleStepImageDeleted(4, id)}
+            onImageReplaced={(oldId, newImg) => handleStepImageReplaced(4, oldId, newImg)}
+            onImageCaptionChange={(id, cap) => handleStepImageCaptionChange(4, id, cap)}
           />
         );
       case 5:
@@ -378,6 +448,12 @@ export default function AuditWizard({ report }: AuditWizardProps) {
             onChange={handleCipChange}
             cipFlows={wizardState.cipFlows}
             onCipFlowsChange={handleCipFlowsChange}
+            auditId={report.id}
+            images={wizardState.stepImages[5] || []}
+            onImageUploaded={(img) => handleStepImageUploaded(5, img)}
+            onImageDeleted={(id) => handleStepImageDeleted(5, id)}
+            onImageReplaced={(oldId, newImg) => handleStepImageReplaced(5, oldId, newImg)}
+            onImageCaptionChange={(id, cap) => handleStepImageCaptionChange(5, id, cap)}
           />
         );
       case 6:

@@ -169,6 +169,10 @@ function CopSectionCard({ section, finding, onChange, auditId }: CopSectionCardP
                   ...finding,
                   images: (finding.images || []).filter(i => i.id !== imgId)
                 })}
+                onReplaced={(oldId, newImg) => onChange({
+                  ...finding,
+                  images: [...(finding.images || []).filter(i => i.id !== oldId), newImg]
+                })}
                 onCaptionChange={(imgId, caption) => onChange({
                   ...finding,
                   images: (finding.images || []).map(i => i.id === imgId ? { ...i, caption } : i)

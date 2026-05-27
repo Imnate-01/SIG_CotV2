@@ -2,7 +2,8 @@
 
 import React, { useState } from "react";
 import { ParameterRangeRow } from "./ParameterRangeRow";
-import { Plus, Trash2, Beaker } from "lucide-react";
+import { Plus, Trash2, Beaker, Camera } from "lucide-react";
+import { EvidenceUploader, EvidenceImageItem } from "./EvidenceUploader";
 
 /* ─────────────────────────────────────────
    DATOS DE PARÁMETROS — CIP
@@ -316,9 +317,15 @@ export interface Step5CIPProps {
   onChange: (key: string, val: number | null) => void;
   cipFlows: CipFlowRow[];
   onCipFlowsChange: (flows: CipFlowRow[]) => void;
+  auditId?: number;
+  images?: EvidenceImageItem[];
+  onImageUploaded?: (img: EvidenceImageItem) => void;
+  onImageDeleted?: (id: number) => void;
+  onImageReplaced?: (oldId: number, newImg: EvidenceImageItem) => void;
+  onImageCaptionChange?: (id: number, caption: string) => void;
 }
 
-export function Step5CIP({ values, onChange, cipFlows, onCipFlowsChange }: Step5CIPProps) {
+export function Step5CIP({ values, onChange, cipFlows, onCipFlowsChange, auditId, images = [], onImageUploaded, onImageDeleted, onImageReplaced, onImageCaptionChange }: Step5CIPProps) {
   return (
     <div className="fsa-step-enter" style={{ display: "flex", flexDirection: "column", gap: 24 }}>
       {/* Intro */}
@@ -384,6 +391,41 @@ export function Step5CIP({ values, onChange, cipFlows, onCipFlowsChange }: Step5
 
       {/* Flujos por cabezal */}
       <CipFlowsTable flows={cipFlows} onFlowsChange={onCipFlowsChange} />
+
+      {/* Evidencias fotográficas */}
+      <div className="fsa-section-card">
+        <div className="fsa-section-card-header">
+          <div className="fsa-section-card-icon">
+            <Camera size={18} color="#64748b" />
+          </div>
+          <div>
+            <div className="fsa-section-card-title">Evidencias Fotográficas</div>
+            <div className="fsa-section-card-subtitle">Fotos de campo del proceso CIP (opcional)</div>
+          </div>
+        </div>
+        <div className="fsa-section-card-body">
+          {auditId ? (
+            <EvidenceUploader
+              auditId={auditId}
+              paramId={5}
+              images={images}
+              onUploaded={onImageUploaded ?? (() => {})}
+              onDeleted={onImageDeleted ?? (() => {})}
+              onReplaced={onImageReplaced}
+              onCaptionChange={onImageCaptionChange ?? (() => {})}
+              maxImages={10}
+            />
+          ) : (
+            <div style={{
+              background: "#fff", border: "1px dashed #cbd5e1",
+              borderRadius: 8, padding: "14px", fontSize: 12, color: "#94a3b8",
+              textAlign: "center"
+            }}>
+              💾 Guarda el reporte primero para habilitar la carga de imágenes
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

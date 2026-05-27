@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState, useRef, useCallback } from "react";
-import { Upload, X, Camera, GripVertical, AlertCircle, CheckCircle2, Loader2, Image as ImageIcon } from "lucide-react";
+import { Upload, X, Camera, AlertCircle, CheckCircle2, Loader2, Image as ImageIcon, Pencil } from "lucide-react";
 import { foodSafetyAuditApi } from "@/services/foodSafetyAudit";
+import { ImageAnnotationEditor } from "./ImageAnnotationEditor";
 
 // ── Tipos ────────────────────────────────────────────────────────────
 export interface EvidenceImageItem {
@@ -25,6 +26,7 @@ interface EvidenceUploaderProps {
   images: EvidenceImageItem[];
   onUploaded: (img: EvidenceImageItem) => void;
   onDeleted: (id: number) => void;
+  onReplaced?: (oldId: number, newImg: EvidenceImageItem) => void;
   onCaptionChange: (id: number, caption: string) => void;
   maxImages?: number;
   disabled?: boolean;
@@ -35,6 +37,37 @@ const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic", "i
 const MAX_SIZE_BYTES = 20 * 1024 * 1024; // 20 MB
 const MIN_WIDTH = 800;
 const MIN_HEIGHT = 600;
+
+// Mapa de extensiones → MIME type
+const EXT_TO_MIME: Record<string, string> = {
+  jpg:  "image/jpeg",
+  jpeg: "image/jpeg",
+  png:  "image/png",
+  webp: "image/webp",
+  heic: "image/heic",
+  heif: "image/heif",
+};
+
+/**
+ * En Windows, los archivos HEIC no tienen MIME type registrado en el OS,
+ * por lo que el navegador reporta file.type = "" o "application/octet-stream".
+ * Esta función devuelve el MIME correcto derivándolo de la extensión como fallback.
+ */
+function getEffectiveMimeType(file: File): string {
+  if (file.type && file.type !== "application/octet-stream") return file.type;
+  const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+  return EXT_TO_MIME[ext] || file.type;
+}
+
+/**
+ * Devuelve un nuevo objeto File con el MIME type corregido.
+ * Necesario para que el navegador envíe el Content-Type correcto en el FormData.
+ */
+function normalizeFileType(file: File): File {
+  const effective = getEffectiveMimeType(file);
+  if (effective === file.type) return file;
+  return new File([file], file.name, { type: effective });
+}
 
 async function getImageDimensions(file: File): Promise<{ width: number; height: number }> {
   return new Promise((resolve, reject) => {
@@ -50,15 +83,17 @@ async function getImageDimensions(file: File): Promise<{ width: number; height: 
 }
 
 async function validateImage(file: File): Promise<string | null> {
-  if (!ALLOWED_TYPES.includes(file.type)) {
+  // Usar MIME efectivo: en Windows los HEIC llegan con type="" o "application/octet-stream"
+  const effectiveType = getEffectiveMimeType(file);
+  if (!ALLOWED_TYPES.includes(effectiveType)) {
     return "Formato no soportado. Use JPEG, PNG, WEBP o HEIC (iPhone).";
   }
   if (file.size > MAX_SIZE_BYTES) {
     return "La imagen excede el límite de 20 MB.";
   }
-  // Los archivos HEIC/HEIF no se pueden decodificar en el navegador para medir
-  // dimensiones — el backend (sharp) se encarga de la conversión y validación.
-  const isHeic = file.type === "image/heic" || file.type === "image/heif";
+  // HEIC/HEIF no se pueden decodificar en el navegador para medir dimensiones
+  // (Chrome/Windows no soporta HEIC nativamente) — el backend (sharp) lo hace.
+  const isHeic = effectiveType === "image/heic" || effectiveType === "image/heif";
   if (!isHeic) {
     try {
       const dims = await getImageDimensions(file);
@@ -92,12 +127,14 @@ export function EvidenceUploader({
   images,
   onUploaded,
   onDeleted,
+  onReplaced,
   onCaptionChange,
   maxImages = 5,
   disabled = false,
 }: EvidenceUploaderProps) {
-  const [dragOver, setDragOver] = useState(false);
-  const [queue, setQueue] = useState<UploadItem[]>([]);
+  const [dragOver,      setDragOver]      = useState(false);
+  const [queue,         setQueue]         = useState<UploadItem[]>([]);
+  const [editingImage,  setEditingImage]  = useState<EvidenceImageItem | null>(null);
   const [editingCaption, setEditingCaption] = useState<Record<number, string>>({});
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -126,7 +163,9 @@ export function EvidenceUploader({
       setQueue(prev => prev.map(q => q.id === itemId ? { ...q, state: "uploading", progress: 10 } : q));
       try {
         const fd = new FormData();
-        fd.append("image", file);
+        // normalizeFileType corrige el MIME type para archivos HEIC en Windows,
+        // donde el browser reporta type="" y el multipart llevaría Content-Type incorrecto.
+        fd.append("image", normalizeFileType(file));
         if (copFindingId) fd.append("cop_finding_id", String(copFindingId));
         if (paramId)      fd.append("param_id", String(paramId));
         fd.append("orden", String(images.length));
@@ -345,6 +384,28 @@ export function EvidenceUploader({
                     )}
                   </div>
 
+                  {/* Barra de acciones: Anotar */}
+                  {!disabled && (
+                    <button
+                      onClick={() => setEditingImage(img)}
+                      title="Abrir editor de anotaciones"
+                      style={{
+                        width: "100%", display: "flex", alignItems: "center",
+                        justifyContent: "center", gap: 5,
+                        padding: "5px 0",
+                        background: "#f0f9ff", border: "none",
+                        borderTop: "1px solid #e0f2fe",
+                        cursor: "pointer", color: "#0369a1",
+                        fontSize: 11, fontWeight: 700,
+                        transition: "background 0.15s",
+                      }}
+                      onMouseOver={e => (e.currentTarget.style.background = "#e0f2fe")}
+                      onMouseOut={e  => (e.currentTarget.style.background = "#f0f9ff")}
+                    >
+                      <Pencil size={11} /> Añadir anotaciones
+                    </button>
+                  )}
+
                   {/* Caption */}
                   <div style={{ padding: "8px 10px" }}>
                     {isEditing ? (
@@ -399,6 +460,26 @@ export function EvidenceUploader({
           <ImageIcon size={24} style={{ marginBottom: 6 }} />
           <p style={{ margin: 0 }}>No hay imágenes de evidencia</p>
         </div>
+      )}
+
+      {/* ── Editor de anotaciones (modal full-screen) ── */}
+      {editingImage && (
+        <ImageAnnotationEditor
+          auditId={auditId}
+          copFindingId={copFindingId}
+          paramId={paramId}
+          image={editingImage}
+          onSaved={(oldId, newImg) => {
+            if (onReplaced) {
+              onReplaced(oldId, newImg);
+            } else {
+              onDeleted(oldId);
+              onUploaded(newImg);
+            }
+            setEditingImage(null);
+          }}
+          onClose={() => setEditingImage(null)}
+        />
       )}
     </div>
   );

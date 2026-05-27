@@ -1,7 +1,9 @@
 "use client";
 
 import React from "react";
+import { Camera } from "lucide-react";
 import { ParameterRangeRow } from "./ParameterRangeRow";
+import { EvidenceUploader, EvidenceImageItem } from "./EvidenceUploader";
 
 const H2O2_PARAMS_TRACKS_12 = [
   { feature: "Spray qty H₂O₂ Prod. A/wine (≥500ml)", unidad: "µl/s", hh: 380, hs: 355, sp: 330, l: 305, ll: 280 },
@@ -21,6 +23,9 @@ const H2O2_GENERAL_PARAMS = [
 
 type ParamValues = Record<string, number | null>;
 
+const upperValueKey = (key: string) => `${key}__upper`;
+const lowerValueKey = (key: string) => `${key}__lower`;
+
 interface Step3H2O2Props {
   values: ParamValues;
   onChange: (key: string, val: number | null) => void;
@@ -28,9 +33,15 @@ interface Step3H2O2Props {
   h2o2Tipo?: string;
   h2o2Concentracion?: number | null;
   onMetaChange?: (field: string, val: any) => void;
+  auditId?: number;
+  images?: EvidenceImageItem[];
+  onImageUploaded?: (img: EvidenceImageItem) => void;
+  onImageDeleted?: (id: number) => void;
+  onImageReplaced?: (oldId: number, newImg: EvidenceImageItem) => void;
+  onImageCaptionChange?: (id: number, caption: string) => void;
 }
 
-export function Step3H2O2({ values, onChange, h2o2Proveedor = "", h2o2Tipo = "", h2o2Concentracion = null, onMetaChange }: Step3H2O2Props) {
+export function Step3H2O2({ values, onChange, h2o2Proveedor = "", h2o2Tipo = "", h2o2Concentracion = null, onMetaChange, auditId, images = [], onImageUploaded, onImageDeleted, onImageReplaced, onImageCaptionChange }: Step3H2O2Props) {
   return (
     <div className="fsa-step-enter" style={{ display: "flex", flexDirection: "column", gap: 24 }}>
       {/* Datos generales del H₂O₂ */}
@@ -104,7 +115,8 @@ export function Step3H2O2({ values, onChange, h2o2Proveedor = "", h2o2Tipo = "",
                 <th style={{ color: "#f97316" }}>L</th>
                 <th style={{ color: "#dc2626" }}>LL</th>
                 <th>Último</th>
-                <th>Actual</th>
+                <th>Actual Sup.</th>
+                <th>Actual Inf.</th>
               </tr>
             </thead>
             <tbody>
@@ -112,8 +124,12 @@ export function Step3H2O2({ values, onChange, h2o2Proveedor = "", h2o2Tipo = "",
                 <ParameterRangeRow
                   key={`h2o2-t12-${i}`}
                   {...p}
-                  valorActual={values[`t12_${p.feature}`] ?? null}
-                  onChange={val => onChange(`t12_${p.feature}`, val)}
+                  actualMode="dual"
+                  valorActualSuperior={values[upperValueKey(`t12_${p.feature}`)] ?? values[`t12_${p.feature}`] ?? null}
+                  valorActualInferior={values[lowerValueKey(`t12_${p.feature}`)] ?? null}
+                  onChange={val => onChange(upperValueKey(`t12_${p.feature}`), val)}
+                  onChangeSuperior={val => onChange(upperValueKey(`t12_${p.feature}`), val)}
+                  onChangeInferior={val => onChange(lowerValueKey(`t12_${p.feature}`), val)}
                   track={12}
                 />
               ))}
@@ -144,7 +160,8 @@ export function Step3H2O2({ values, onChange, h2o2Proveedor = "", h2o2Tipo = "",
                 <th style={{ color: "#f97316" }}>L</th>
                 <th style={{ color: "#dc2626" }}>LL</th>
                 <th>Último</th>
-                <th>Actual</th>
+                <th>Actual Sup.</th>
+                <th>Actual Inf.</th>
               </tr>
             </thead>
             <tbody>
@@ -152,8 +169,12 @@ export function Step3H2O2({ values, onChange, h2o2Proveedor = "", h2o2Tipo = "",
                 <ParameterRangeRow
                   key={`h2o2-t34-${i}`}
                   {...p}
-                  valorActual={values[`t34_${p.feature}`] ?? null}
-                  onChange={val => onChange(`t34_${p.feature}`, val)}
+                  actualMode="dual"
+                  valorActualSuperior={values[upperValueKey(`t34_${p.feature}`)] ?? values[`t34_${p.feature}`] ?? null}
+                  valorActualInferior={values[lowerValueKey(`t34_${p.feature}`)] ?? null}
+                  onChange={val => onChange(upperValueKey(`t34_${p.feature}`), val)}
+                  onChangeSuperior={val => onChange(upperValueKey(`t34_${p.feature}`), val)}
+                  onChangeInferior={val => onChange(lowerValueKey(`t34_${p.feature}`), val)}
                   track={34}
                 />
               ))}
@@ -184,7 +205,8 @@ export function Step3H2O2({ values, onChange, h2o2Proveedor = "", h2o2Tipo = "",
                 <th style={{ color: "#f97316" }}>L</th>
                 <th style={{ color: "#dc2626" }}>LL</th>
                 <th>Último</th>
-                <th>Actual</th>
+                <th>Actual Sup.</th>
+                <th>Actual Inf.</th>
               </tr>
             </thead>
             <tbody>
@@ -192,12 +214,51 @@ export function Step3H2O2({ values, onChange, h2o2Proveedor = "", h2o2Tipo = "",
                 <ParameterRangeRow
                   key={`h2o2-gen-${i}`}
                   {...p}
-                  valorActual={values[`gen_${p.feature}`] ?? null}
-                  onChange={val => onChange(`gen_${p.feature}`, val)}
+                  actualMode="dual"
+                  valorActualSuperior={values[upperValueKey(`gen_${p.feature}`)] ?? values[`gen_${p.feature}`] ?? null}
+                  valorActualInferior={values[lowerValueKey(`gen_${p.feature}`)] ?? null}
+                  onChange={val => onChange(upperValueKey(`gen_${p.feature}`), val)}
+                  onChangeSuperior={val => onChange(upperValueKey(`gen_${p.feature}`), val)}
+                  onChangeInferior={val => onChange(lowerValueKey(`gen_${p.feature}`), val)}
                 />
               ))}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      {/* Evidencias fotográficas */}
+      <div className="fsa-section-card">
+        <div className="fsa-section-card-header">
+          <div className="fsa-section-card-icon">
+            <Camera size={18} color="#64748b" />
+          </div>
+          <div>
+            <div className="fsa-section-card-title">Evidencias Fotográficas</div>
+            <div className="fsa-section-card-subtitle">Fotos de campo del sistema H₂O₂ (opcional)</div>
+          </div>
+        </div>
+        <div className="fsa-section-card-body">
+          {auditId ? (
+            <EvidenceUploader
+              auditId={auditId}
+              paramId={3}
+              images={images}
+              onUploaded={onImageUploaded ?? (() => {})}
+              onDeleted={onImageDeleted ?? (() => {})}
+              onReplaced={onImageReplaced}
+              onCaptionChange={onImageCaptionChange ?? (() => {})}
+              maxImages={10}
+            />
+          ) : (
+            <div style={{
+              background: "#fff", border: "1px dashed #cbd5e1",
+              borderRadius: 8, padding: "14px", fontSize: 12, color: "#94a3b8",
+              textAlign: "center"
+            }}>
+              💾 Guarda el reporte primero para habilitar la carga de imágenes
+            </div>
+          )}
         </div>
       </div>
     </div>

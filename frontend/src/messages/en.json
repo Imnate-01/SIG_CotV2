@@ -469,7 +469,7 @@
     "namePlaceholder": "Full name",
     "email": "Email",
     "phone": "Phone",
-    "secondaryContact": "Secondary Contact (Client)",
+    "secondaryContact": "Customer",
     "serviceTitle": "Service Details",
     "serviceSubtitle": "Select the rate, number of engineers, and hours/days",
     "addConcept": "+ Add item",

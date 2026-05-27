@@ -46,6 +46,12 @@ export const foodSafetyAuditApi = {
         headers: { 'Content-Type': 'multipart/form-data' },
       }),
 
+    /** Reemplaza atómicamente el contenido de una imagen existente (mismo ID en BD). */
+    replace: (auditId: number, imgId: number, formData: FormData) =>
+      api.put(`${BASE}/${auditId}/images/${imgId}/replace`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      }),
+
     updateCaption: (auditId: number, imgId: number, caption: string, orden?: number) =>
       api.patch(`${BASE}/${auditId}/images/${imgId}`, { caption, orden }),
 

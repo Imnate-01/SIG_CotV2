@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
+import { Camera } from "lucide-react";
 import { ParameterRangeRow } from "./ParameterRangeRow";
+import { EvidenceUploader, EvidenceImageItem } from "./EvidenceUploader";
 
 /* ─── Datos de parámetros por defecto ─── */
 
@@ -27,6 +29,9 @@ const STERILE_AIR_HOUSEHOLD = [
 
 type ParamRow = { feature: string; unidad: string; hh?: number | null; hs?: number | null; sp?: number | null; l?: number | null; ll?: number | null };
 type ParamValues = Record<string, number | null>;
+
+const upperValueKey = (key: string) => `${key}__upper`;
+const lowerValueKey = (key: string) => `${key}__lower`;
 
 interface ParamTableProps {
   title: string;
@@ -60,7 +65,8 @@ function ParamTable({ title, icon, params, values, onChange, subtitle }: ParamTa
               <th style={{ color: "#f97316" }}>L</th>
               <th style={{ color: "#dc2626" }}>LL</th>
               <th>Último</th>
-              <th>Actual</th>
+              <th>Actual Sup.</th>
+              <th>Actual Inf.</th>
             </tr>
           </thead>
           <tbody>
@@ -74,8 +80,12 @@ function ParamTable({ title, icon, params, values, onChange, subtitle }: ParamTa
                 sp={p.sp}
                 l={p.l}
                 ll={p.ll}
-                valorActual={values[p.feature] ?? null}
-                onChange={val => onChange(p.feature, val)}
+                actualMode="dual"
+                valorActualSuperior={values[upperValueKey(p.feature)] ?? values[p.feature] ?? null}
+                valorActualInferior={values[lowerValueKey(p.feature)] ?? null}
+                onChange={val => onChange(upperValueKey(p.feature), val)}
+                onChangeSuperior={val => onChange(upperValueKey(p.feature), val)}
+                onChangeInferior={val => onChange(lowerValueKey(p.feature), val)}
               />
             ))}
           </tbody>
@@ -88,9 +98,15 @@ function ParamTable({ title, icon, params, values, onChange, subtitle }: ParamTa
 interface Step2DedusterProps {
   values: ParamValues;
   onChange: (key: string, val: number | null) => void;
+  auditId?: number;
+  images?: EvidenceImageItem[];
+  onImageUploaded?: (img: EvidenceImageItem) => void;
+  onImageDeleted?: (id: number) => void;
+  onImageReplaced?: (oldId: number, newImg: EvidenceImageItem) => void;
+  onImageCaptionChange?: (id: number, caption: string) => void;
 }
 
-export function Step2Dedusting({ values, onChange }: Step2DedusterProps) {
+export function Step2Dedusting({ values, onChange, auditId, images = [], onImageUploaded, onImageDeleted, onImageReplaced, onImageCaptionChange }: Step2DedusterProps) {
   return (
     <div className="fsa-step-enter" style={{ display: "flex", flexDirection: "column", gap: 24 }}>
       {/* Intro */}
@@ -168,6 +184,41 @@ export function Step2Dedusting({ values, onChange }: Step2DedusterProps) {
         values={values}
         onChange={onChange}
       />
+
+      {/* Evidencias fotográficas */}
+      <div className="fsa-section-card">
+        <div className="fsa-section-card-header">
+          <div className="fsa-section-card-icon">
+            <Camera size={18} color="#64748b" />
+          </div>
+          <div>
+            <div className="fsa-section-card-title">Evidencias Fotográficas</div>
+            <div className="fsa-section-card-subtitle">Fotos de campo del sistema de dedusting y aire estéril (opcional)</div>
+          </div>
+        </div>
+        <div className="fsa-section-card-body">
+          {auditId ? (
+            <EvidenceUploader
+              auditId={auditId}
+              paramId={2}
+              images={images}
+              onUploaded={onImageUploaded ?? (() => {})}
+              onDeleted={onImageDeleted ?? (() => {})}
+              onReplaced={onImageReplaced}
+              onCaptionChange={onImageCaptionChange ?? (() => {})}
+              maxImages={10}
+            />
+          ) : (
+            <div style={{
+              background: "#fff", border: "1px dashed #cbd5e1",
+              borderRadius: 8, padding: "14px", fontSize: 12, color: "#94a3b8",
+              textAlign: "center"
+            }}>
+              💾 Guarda el reporte primero para habilitar la carga de imágenes
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

@@ -241,7 +241,7 @@ const CotizacionPDF: React.FC<CotizacionPDFProps> = ({ formData, itemsServicio, 
             {formData.contactoPrincipal.telefono ? <Text style={pdfStyles.value}>Tel: {formData.contactoPrincipal.telefono}</Text> : null}
           </View>
           <View style={pdfStyles.column}>
-            <Text style={pdfStyles.label}>{isUS ? "Contact:" : "Contacto:"}</Text>
+            <Text style={pdfStyles.label}>{isUS ? "Customer:" : "Contacto:"}</Text>
             {formData.contactoSecundario.nombre ? <Text style={[pdfStyles.value, { fontWeight: "bold" }]}>{formData.contactoSecundario.nombre}</Text> : null}
             {formData.contactoSecundario.email ? <Text style={pdfStyles.value}>E-mail: {formData.contactoSecundario.email}</Text> : null}
             {formData.contactoSecundario.telefono ? <Text style={pdfStyles.value}>Tel: {formData.contactoSecundario.telefono}</Text> : null}

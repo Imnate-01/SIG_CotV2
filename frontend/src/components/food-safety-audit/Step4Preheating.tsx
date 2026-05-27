@@ -1,7 +1,9 @@
 "use client";
 
 import React from "react";
+import { Camera } from "lucide-react";
 import { ParameterRangeRow } from "./ParameterRangeRow";
+import { EvidenceUploader, EvidenceImageItem } from "./EvidenceUploader";
 
 /* ─────────────────────────────────────────
    DATOS DE PARÁMETROS — Preheating & SST
@@ -47,6 +49,9 @@ type ParamRow = {
 };
 type ParamValues = Record<string, number | null>;
 
+const upperValueKey = (key: string) => `${key}__upper`;
+const lowerValueKey = (key: string) => `${key}__lower`;
+
 // ─── Componente reutilizable de tabla de parámetros ───
 function ParamTable({
   title, icon, subtitle, params, values, onChange,
@@ -77,7 +82,8 @@ function ParamTable({
               <th style={{ color: "#f97316" }}>L</th>
               <th style={{ color: "#dc2626" }}>LL</th>
               <th>Último</th>
-              <th>Actual</th>
+              <th>Actual Sup.</th>
+              <th>Actual Inf.</th>
             </tr>
           </thead>
           <tbody>
@@ -91,8 +97,12 @@ function ParamTable({
                 sp={p.sp}
                 l={p.l}
                 ll={p.ll}
-                valorActual={values[p.feature] ?? null}
-                onChange={(val) => onChange(p.feature, val)}
+                actualMode="dual"
+                valorActualSuperior={values[upperValueKey(p.feature)] ?? values[p.feature] ?? null}
+                valorActualInferior={values[lowerValueKey(p.feature)] ?? null}
+                onChange={(val) => onChange(upperValueKey(p.feature), val)}
+                onChangeSuperior={(val) => onChange(upperValueKey(p.feature), val)}
+                onChangeInferior={(val) => onChange(lowerValueKey(p.feature), val)}
               />
             ))}
           </tbody>
@@ -103,6 +113,7 @@ function ParamTable({
 }
 
 // ─── Tabla de medición por track para Preheating dinámico ───
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function TrackMeasurementCard({
   values, onChange,
 }: {
@@ -135,9 +146,10 @@ function TrackMeasurementCard({
               <th style={{ textAlign: "left", minWidth: 220 }}>Parámetro</th>
               <th>Unidad</th>
               <th>SP ref.</th>
-              {tracks.map((t) => (
-                <th key={t} style={{ color: "#2563eb" }}>Track {t}</th>
-              ))}
+              {tracks.flatMap((t) => [
+                <th key={`tr${t}-sup`} style={{ color: "#2563eb" }}>Tr {t} Sup.</th>,
+                <th key={`tr${t}-inf`} style={{ color: "#2563eb" }}>Tr {t} Inf.</th>,
+              ])}
             </tr>
           </thead>
           <tbody>
@@ -176,12 +188,99 @@ function TrackMeasurementCard({
 }
 
 /* ─── Componente principal del Paso 4 ─── */
+function TrackMeasurementCardDual({
+  values, onChange,
+}: {
+  values: ParamValues;
+  onChange: (key: string, val: number | null) => void;
+}) {
+  const tracks = [1, 2, 3, 4];
+  const params = [
+    { label: "pdyn preheating (NW 19)", key: "pdyn_preh", unidad: "mmwc", sp: 34 },
+    { label: "Temperature preheating",  key: "temp_preh", unidad: "°C",   sp: 100 },
+    { label: "pdyn drying (NW 19)",     key: "pdyn_dry",  unidad: "mmwc", sp: 26 },
+    { label: "Temperature drying",      key: "temp_dry",  unidad: "°C",   sp: 100 },
+  ];
+
+  const renderTrackInput = (key: string, val: number | null, label: string, sp: number) => {
+    const isOk = val !== null && val !== undefined && Math.abs(val - sp) <= 2;
+    const isWarn = val !== null && val !== undefined && !isOk && Math.abs(val - sp) <= 5;
+    return (
+      <td key={key} className={isOk ? "fsa-cell-ok" : isWarn ? "fsa-cell-warn" : ""}>
+        <input
+          type="number"
+          step="0.1"
+          className="fsa-value-input"
+          placeholder={label}
+          value={val ?? ""}
+          onChange={(e) => onChange(key, e.target.value === "" ? null : Number(e.target.value))}
+        />
+      </td>
+    );
+  };
+
+  return (
+    <div className="fsa-section-card">
+      <div className="fsa-section-card-header">
+        <div className="fsa-section-card-icon">
+          <span style={{ fontSize: 18 }}>🔥</span>
+        </div>
+        <div>
+          <div className="fsa-section-card-title">Medición de Nozzles por Track</div>
+          <div className="fsa-section-card-subtitle">Lecturas superior e inferior de pdyn y temperatura por track (1-4)</div>
+        </div>
+      </div>
+      <div style={{ overflowX: "auto", padding: "0 0 4px 0" }}>
+        <table className="fsa-param-table">
+          <thead>
+            <tr>
+              <th style={{ textAlign: "left", minWidth: 220 }}>Parámetro</th>
+              <th>Unidad</th>
+              <th>SP ref.</th>
+              {tracks.flatMap((t) => [
+                <th key={`tr${t}-sup`} style={{ color: "#2563eb" }}>Tr {t} Sup.</th>,
+                <th key={`tr${t}-inf`} style={{ color: "#2563eb" }}>Tr {t} Inf.</th>,
+              ])}
+            </tr>
+          </thead>
+          <tbody>
+            {params.map((p) => (
+              <tr key={p.key}>
+                <td style={{ fontWeight: 500, color: "#334155" }}>{p.label}</td>
+                <td style={{ textAlign: "center", color: "#94a3b8", fontSize: 12 }}>{p.unidad}</td>
+                <td style={{ textAlign: "center", fontFamily: "monospace", color: "#2563eb", fontSize: 13 }}>
+                  {p.sp} ±2
+                </td>
+                {tracks.flatMap((t) => {
+                  const fieldKey = `${p.key}_tr${t}`;
+                  const upperKey = upperValueKey(fieldKey);
+                  const lowerKey = lowerValueKey(fieldKey);
+                  return [
+                    renderTrackInput(upperKey, values[upperKey] ?? values[fieldKey] ?? null, "Sup.", p.sp),
+                    renderTrackInput(lowerKey, values[lowerKey] ?? null, "Inf.", p.sp),
+                  ];
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 export interface Step4PreheatingProps {
   values: ParamValues;
   onChange: (key: string, val: number | null) => void;
+  auditId?: number;
+  images?: EvidenceImageItem[];
+  onImageUploaded?: (img: EvidenceImageItem) => void;
+  onImageDeleted?: (id: number) => void;
+  onImageReplaced?: (oldId: number, newImg: EvidenceImageItem) => void;
+  onImageCaptionChange?: (id: number, caption: string) => void;
 }
 
-export function Step4Preheating({ values, onChange }: Step4PreheatingProps) {
+export function Step4Preheating({ values, onChange, auditId, images = [], onImageUploaded, onImageDeleted, onImageReplaced, onImageCaptionChange }: Step4PreheatingProps) {
   return (
     <div className="fsa-step-enter" style={{ display: "flex", flexDirection: "column", gap: 24 }}>
       {/* Header informativo */}
@@ -207,7 +306,7 @@ export function Step4Preheating({ values, onChange }: Step4PreheatingProps) {
       </div>
 
       {/* Nozzles por Track (medición dinámica) */}
-      <TrackMeasurementCard values={values} onChange={onChange} />
+      <TrackMeasurementCardDual values={values} onChange={onChange} />
 
       {/* Setpoints por volumen */}
       <ParamTable
@@ -248,6 +347,41 @@ export function Step4Preheating({ values, onChange }: Step4PreheatingProps) {
         values={values}
         onChange={onChange}
       />
+
+      {/* Evidencias fotográficas */}
+      <div className="fsa-section-card">
+        <div className="fsa-section-card-header">
+          <div className="fsa-section-card-icon">
+            <Camera size={18} color="#64748b" />
+          </div>
+          <div>
+            <div className="fsa-section-card-title">Evidencias Fotográficas</div>
+            <div className="fsa-section-card-subtitle">Fotos de campo del sistema de Preheating & SST (opcional)</div>
+          </div>
+        </div>
+        <div className="fsa-section-card-body">
+          {auditId ? (
+            <EvidenceUploader
+              auditId={auditId}
+              paramId={4}
+              images={images}
+              onUploaded={onImageUploaded ?? (() => {})}
+              onDeleted={onImageDeleted ?? (() => {})}
+              onReplaced={onImageReplaced}
+              onCaptionChange={onImageCaptionChange ?? (() => {})}
+              maxImages={10}
+            />
+          ) : (
+            <div style={{
+              background: "#fff", border: "1px dashed #cbd5e1",
+              borderRadius: 8, padding: "14px", fontSize: 12, color: "#94a3b8",
+              textAlign: "center"
+            }}>
+              💾 Guarda el reporte primero para habilitar la carga de imágenes
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
