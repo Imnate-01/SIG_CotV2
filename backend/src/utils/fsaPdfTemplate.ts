@@ -184,8 +184,8 @@ export function buildFsaPdfHtml(report: any): { html: string, headerTemplate: st
   .img-grid-1{grid-template-columns:1fr}
   .img-grid-2{grid-template-columns:1fr 1fr}
   .img-grid-3,.img-grid-4{grid-template-columns:1fr 1fr}
-  .img-figure{margin:0}
-  .evidence-img{width:100%;border-radius:4px;border:1px solid #e2e8f0;object-fit:cover;max-height:55mm}
+  .img-figure{margin:0;text-align:center}
+  .evidence-img{display:block;max-width:100%;max-height:65mm;width:auto;height:auto;border-radius:4px;border:1px solid #e2e8f0;margin:0 auto}
   figcaption{font-size:7pt;color:#64748b;text-align:center;margin-top:2px;font-style:italic}
 
   /* ══ PARAM TABLE ══ */

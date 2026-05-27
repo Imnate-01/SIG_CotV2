@@ -3,16 +3,41 @@ import multer from 'multer';
 import { createClientForUser } from '../config/supabase';
 import { processAuditImage, deleteAuditImageVersions } from '../utils/imageProcessor';
 
+// Mapa de extensión → MIME correcto (fallback cuando el OS no registra el tipo)
+const EXT_TO_MIME: Record<string, string> = {
+  jpg: 'image/jpeg', jpeg: 'image/jpeg',
+  png: 'image/png',  webp: 'image/webp',
+  heic: 'image/heic', heif: 'image/heif',
+};
+
+/**
+ * Devuelve el MIME efectivo del archivo.
+ * En Windows, los archivos HEIC llegan con mimetype="" o "application/octet-stream"
+ * porque el OS no tiene el tipo MIME registrado. En ese caso usamos la extensión.
+ */
+function getEffectiveMime(file: Express.Multer.File): string {
+  const isMissing = !file.mimetype || file.mimetype === 'application/octet-stream';
+  if (!isMissing) return file.mimetype;
+  const ext = file.originalname.split('.').pop()?.toLowerCase() ?? '';
+  return EXT_TO_MIME[ext] || file.mimetype;
+}
+
 // Multer: memoria RAM (sin guardar en disco)
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 20 * 1024 * 1024 }, // 20 MB máx
   fileFilter: (_req, file, cb) => {
-    // HEIC/HEIF = formato nativo de iPhone/iPad
-    // image/heif cubre tanto .heic como .heif según RFC 8694
-    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
-    if (allowed.includes(file.mimetype)) cb(null, true);
-    else cb(new Error('Formato no soportado. Use JPEG, PNG, WEBP o HEIC (iPhone).'));
+    // Aceptamos por MIME type o por extensión del archivo.
+    // La comprobación por extensión es el fallback para Windows + HEIC,
+    // donde el browser no conoce el MIME y envía "application/octet-stream".
+    const allowedMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
+    const allowedExts  = ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'];
+    const ext = file.originalname.split('.').pop()?.toLowerCase() ?? '';
+    if (allowedMimes.includes(file.mimetype) || allowedExts.includes(ext)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Formato no soportado. Use JPEG, PNG, WEBP o HEIC (iPhone).'));
+    }
   },
 });
 
@@ -30,6 +55,10 @@ export class EvidenceImagesController {
       if (!token) return res.status(401).json({ success: false, message: 'No autorizado' });
 
       if (!req.file) return res.status(400).json({ success: false, message: 'No se recibió ningún archivo.' });
+
+      // Normalizar MIME type: en Windows + HEIC, el navegador puede enviar
+      // "application/octet-stream" o vacío. Lo resolvemos por la extensión del archivo.
+      const effectiveMime = getEffectiveMime(req.file);
 
       const supabaseUser = createClientForUser(token);
       const { auditId } = req.params;
@@ -60,9 +89,10 @@ export class EvidenceImagesController {
       const storageKeyBase = `fsa/${year}/${report.folio}/${section}_${seq}`;
 
       // Procesar imagen (genera 3 versiones y sube a Supabase Storage)
+      // Se usa effectiveMime (derivado de la extensión si el OS no tiene HEIC registrado)
       const processed = await processAuditImage(
         req.file.buffer,
-        req.file.mimetype,
+        effectiveMime,
         storageKeyBase,
         req.file.size,
       );
@@ -155,6 +185,91 @@ export class EvidenceImagesController {
       if (error) throw error;
       res.json({ success: true, data });
     } catch (error: any) {
+      res.status(500).json({ success: false, error: error.message });
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // PUT /api/food-safety-audit/:auditId/images/:imgId/replace
+  // Reemplaza atómicamente el contenido de una imagen existente.
+  // Actualiza el registro EN LUGAR (mismo ID) → nunca hay dos registros
+  // simultáneos, eliminando la posibilidad de duplicados en el PDF.
+  // Body: multipart/form-data { image: File }
+  // ─────────────────────────────────────────────────────────
+  async replace(req: Request, res: Response) {
+    try {
+      const token = req.headers.authorization?.split(' ')[1];
+      if (!token) return res.status(401).json({ success: false, message: 'No autorizado' });
+      if (!req.file)  return res.status(400).json({ success: false, message: 'No se recibió ningún archivo.' });
+
+      const effectiveMime = getEffectiveMime(req.file);
+      const supabaseUser  = createClientForUser(token);
+      const { auditId, imgId } = req.params;
+
+      // 1. Obtener el registro actual (necesitamos storage_key para borrar archivos viejos)
+      const { data: existing, error: fetchError } = await supabaseUser
+        .from('audit_evidence_images')
+        .select('*')
+        .eq('id',       imgId)
+        .eq('audit_id', auditId)
+        .single();
+
+      if (fetchError || !existing) {
+        return res.status(404).json({ success: false, error: 'Imagen no encontrada' });
+      }
+
+      // 2. Obtener el folio del reporte para construir la clave de storage
+      const { data: report } = await supabaseUser
+        .from('food_safety_audit_reports')
+        .select('folio')
+        .eq('id', auditId)
+        .single();
+
+      const year    = new Date().getFullYear();
+      const section = existing.cop_finding_id
+        ? `cop_f${existing.cop_finding_id}`
+        : existing.param_id
+        ? `param_${existing.param_id}`
+        : 'misc';
+      // Timestamp para garantizar unicidad de la clave
+      const storageKeyBase = `fsa/${year}/${report?.folio}/${section}_${Date.now()}`;
+
+      // 3. Procesar la nueva imagen (genera thumb + report + original en Storage)
+      const processed = await processAuditImage(
+        req.file.buffer,
+        effectiveMime,
+        storageKeyBase,
+        req.file.size,
+      );
+
+      // 4. Actualizar el registro EN LUGAR (mismo id → nunca hay duplicados)
+      const { data: updated, error: updateError } = await supabaseUser
+        .from('audit_evidence_images')
+        .update({
+          storage_key:    processed.storage_key,
+          url_original:   processed.url_original,
+          url_thumbnail:  processed.url_thumbnail,
+          url_report:     processed.url_report,
+          nombre_archivo: req.file.originalname,
+          mime_type:      processed.mime_type,
+          size_bytes:     processed.size_bytes,
+          width_px:       processed.width_px,
+          height_px:      processed.height_px,
+        })
+        .eq('id', imgId)
+        .select()
+        .single();
+
+      if (updateError) throw updateError;
+
+      // 5. Borrar los archivos VIEJOS del Storage (no bloqueante: si falla, no afecta la respuesta)
+      deleteAuditImageVersions(existing.storage_key).catch((err: any) =>
+        console.warn('[EvidenceImages] No se pudo borrar storage antiguo:', err?.message)
+      );
+
+      res.json({ success: true, data: updated });
+    } catch (error: any) {
+      console.error('[EvidenceImages] replace error:', error);
       res.status(500).json({ success: false, error: error.message });
     }
   }

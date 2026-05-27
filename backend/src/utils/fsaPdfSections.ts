@@ -7,22 +7,28 @@ const n = (v: any, unit = '') =>
 function paramTable(
   title: string,
   icon: string,
-  rows: Array<{ label: string; unit: string; hh?: any; hs?: any; sp?: any; l?: any; ll?: any; actual?: any }>,
+  rows: Array<{ label: string; unit: string; hh?: any; hs?: any; sp?: any; l?: any; ll?: any; actual?: any; actualUpper?: any; actualLower?: any }>,
 ): string {
+  const dualActual = rows.some(r => Object.prototype.hasOwnProperty.call(r, 'actualUpper') || Object.prototype.hasOwnProperty.call(r, 'actualLower'));
+  const actualClass = (actual: any, row: { hh?: any; ll?: any }) => {
+    if (actual === null || actual === undefined) return 'actual-empty';
+    const hh = row.hh ?? Infinity, ll = row.ll ?? -Infinity;
+    return (actual > hh || actual < ll) ? 'actual-err' : 'actual-ok';
+  };
+
   const trs = rows.map(r => {
     const a = r.actual;
-    let cls = 'actual-empty';
-    if (a !== null && a !== undefined) {
-      const hh = r.hh ?? Infinity, ll = r.ll ?? -Infinity;
-      cls = (a > hh || a < ll) ? 'actual-err' : 'actual-ok';
-    }
+    const upper = r.actualUpper ?? a;
+    const lower = r.actualLower;
     return `<tr>
       <td>${r.label}</td>
       <td style="text-align:center;color:#94a3b8;font-size:7.5pt">${r.unit}</td>
       <td class="hh">${n(r.hh)}</td><td class="hs">${n(r.hs)}</td>
       <td class="sp">${n(r.sp)}</td><td class="ls">${n(r.l)}</td>
       <td class="hh">${n(r.ll)}</td>
-      <td class="${cls}">${n(a)}</td>
+      ${dualActual
+        ? `<td class="${actualClass(upper, r)}">${n(upper)}</td><td class="${actualClass(lower, r)}">${n(lower)}</td>`
+        : `<td class="${actualClass(a, r)}">${n(a)}</td>`}
     </tr>`;
   }).join('');
 
@@ -34,7 +40,7 @@ function paramTable(
         <th>Unidad</th>
         <th class="hh">HH</th><th class="hs">HS</th>
         <th class="sp">SP</th><th>L</th><th class="hh">LL</th>
-        <th>Actual</th>
+        ${dualActual ? '<th>Actual Sup.</th><th>Actual Inf.</th>' : '<th>Actual</th>'}
       </tr></thead>
       <tbody>${trs}</tbody>
     </table>
@@ -44,6 +50,11 @@ function paramTable(
 /** Extrae valor del objeto de valores del wizard */
 const v = (vals: Record<string, any>, key: string) =>
   vals && vals[key] !== undefined ? vals[key] : null;
+
+const actualPair = (vals: Record<string, any>, key: string) => ({
+  actualUpper: v(vals, `${key}__upper`) ?? v(vals, key),
+  actualLower: v(vals, `${key}__lower`),
+});
 
 // ─── SECCIÓN 2: Dedusting & Sterile Air ───────────────────────────────────
 export function sectionDedusting(wd: any): string {
@@ -55,21 +66,21 @@ export function sectionDedusting(wd: any): string {
       <h2>Dedusting Unit &amp; Sterile Air Balance</h2>
     </div>
       ${paramTable('Dedusting Unit', '🔧', [
-        { label: 'Tank Pressure Dedusting', unit: 'mbar', hh: 5.5, hs: 5.0, sp: 4.0, l: 3.5, ll: 3.0, actual: v(vals, 'Tank Pressure Dedusting') },
-        { label: 'CAM ON',  unit: '°', sp: 60,  actual: v(vals, 'CAM ON') },
-        { label: 'CAM OFF', unit: '°', sp: 220, actual: v(vals, 'CAM OFF') },
+        { label: 'Tank Pressure Dedusting', unit: 'mbar', hh: 5.5, hs: 5.0, sp: 4.0, l: 3.5, ll: 3.0, ...actualPair(vals, 'Tank Pressure Dedusting') },
+        { label: 'CAM ON',  unit: '°', sp: 60,  ...actualPair(vals, 'CAM ON') },
+        { label: 'CAM OFF', unit: '°', sp: 220, ...actualPair(vals, 'CAM OFF') },
       ])}
       ${paramTable('Sterile Air Balance', '🌬️', [
-        { label: 'Pressure sterile air fan Production',         unit: 'mbar', hh: 35, hs: 32, sp: 30, l: 28, ll: 25, actual: v(vals, 'Pressure sterile air fan Production') },
-        { label: 'Pressure sterile air fan outside production', unit: 'mbar', hh: 10, hs: 5,  sp: 3,  l: null, ll: 0, actual: v(vals, 'Pressure sterile air fan outside production') },
-        { label: 'Pressure loss prefilter',                    unit: 'mbar', hh: 5,  hs: 4,  sp: 2,  l: 0, ll: 0, actual: v(vals, 'Pressure loss prefilter') },
-        { label: 'Pressure loss (HEPA) filter',                unit: 'mbar', hh: 8,  hs: 6,  sp: 2,  l: 0, ll: 0, actual: v(vals, 'Pressure loss (HEPA) filter') },
-        { label: 'Exhaust output',                             unit: 'µbar', hh: 1500, hs: 1400, sp: 1200, l: 800, ll: 700, actual: v(vals, 'Exhaust output') },
-        { label: 'Pressure loss flap exhaust',                 unit: 'µbar', sp: 100, actual: v(vals, 'Pressure loss flap exhaust') },
+        { label: 'Pressure sterile air fan Production',         unit: 'mbar', hh: 35, hs: 32, sp: 30, l: 28, ll: 25, ...actualPair(vals, 'Pressure sterile air fan Production') },
+        { label: 'Pressure sterile air fan outside production', unit: 'mbar', hh: 10, hs: 5,  sp: 3,  l: null, ll: 0, ...actualPair(vals, 'Pressure sterile air fan outside production') },
+        { label: 'Pressure loss prefilter',                    unit: 'mbar', hh: 5,  hs: 4,  sp: 2,  l: 0, ll: 0, ...actualPair(vals, 'Pressure loss prefilter') },
+        { label: 'Pressure loss (HEPA) filter',                unit: 'mbar', hh: 8,  hs: 6,  sp: 2,  l: 0, ll: 0, ...actualPair(vals, 'Pressure loss (HEPA) filter') },
+        { label: 'Exhaust output',                             unit: 'µbar', hh: 1500, hs: 1400, sp: 1200, l: 800, ll: 700, ...actualPair(vals, 'Exhaust output') },
+        { label: 'Pressure loss flap exhaust',                 unit: 'µbar', sp: 100, ...actualPair(vals, 'Pressure loss flap exhaust') },
       ])}
       ${paramTable('Sterile Air Household', '📊', [
-        { label: 'Infeed total',  unit: 'mbar', actual: v(vals, 'Infeed total') },
-        { label: 'Exhaust total', unit: 'mbar', actual: v(vals, 'Exhaust total') },
+        { label: 'Infeed total',  unit: 'mbar', ...actualPair(vals, 'Infeed total') },
+        { label: 'Exhaust total', unit: 'mbar', ...actualPair(vals, 'Exhaust total') },
       ])}
   </div>`;
 }
@@ -102,15 +113,15 @@ export function sectionH2O2(wd: any): string {
           <div><div class="info-label">Concentración</div><div class="info-value">${conc}%</div></div>
         </div>
       </div>
-      ${paramTable('Dosificación H₂O₂ — Tracks 1/2', '💧', t1234Params.map(p => ({ ...p, actual: v(vals, `t12_${p.key}`) })))}
-      ${paramTable('Dosificación H₂O₂ — Tracks 3/4', '💧', t1234Params.map(p => ({ ...p, actual: v(vals, `t34_${p.key}`) })))}
+      ${paramTable('Dosificación H₂O₂ — Tracks 1/2', '💧', t1234Params.map(p => ({ ...p, ...actualPair(vals, `t12_${p.key}`) })))}
+      ${paramTable('Dosificación H₂O₂ — Tracks 3/4', '💧', t1234Params.map(p => ({ ...p, ...actualPair(vals, `t34_${p.key}`) })))}
       ${paramTable('Parámetros Generales H₂O₂', '⚙️', [
-        { label: 'H₂O₂ medium temperature',                     unit: '°C',   hh: 290, hs: 285, sp: 270, l: 255, ll: 250, actual: v(vals, 'gen_H₂O₂ medium temperature') },
-        { label: 'Temperature upper H₂O₂ heater',               unit: '°C',   hh: 180, hs: 180, sp: 160, l: 140, ll: 140, actual: v(vals, 'gen_Temperature upper H₂O₂ heater') },
-        { label: 'Transporting air H₂O₂ Sterilization',         unit: 'l/min',hh: 183, sp: 166, ll: 150, actual: v(vals, 'gen_Transporting air H₂O₂ Sterilization') },
-        { label: 'Transporting air Production',                  unit: 'l/min',hh: 220, sp: 200, ll: 180, actual: v(vals, 'gen_Transporting air Production') },
-        { label: 'Pressure transporting air (dosing piston)',    unit: 'mbar', hh: 2000, hs: 1800, sp: 1000, l: 600, ll: 500, actual: v(vals, 'gen_Pressure transporting air (dosing piston)') },
-        { label: 'Pressure transporting air (analogue 2015)',    unit: 'mbar', hh: 4500, hs: 4000, sp: 3000, l: 1500, ll: 1000, actual: v(vals, 'gen_Pressure transporting air (analogue 2015)') },
+        { label: 'H₂O₂ medium temperature',                     unit: '°C',   hh: 290, hs: 285, sp: 270, l: 255, ll: 250, ...actualPair(vals, 'gen_H₂O₂ medium temperature') },
+        { label: 'Temperature upper H₂O₂ heater',               unit: '°C',   hh: 180, hs: 180, sp: 160, l: 140, ll: 140, ...actualPair(vals, 'gen_Temperature upper H₂O₂ heater') },
+        { label: 'Transporting air H₂O₂ Sterilization',         unit: 'l/min',hh: 183, sp: 166, ll: 150, ...actualPair(vals, 'gen_Transporting air H₂O₂ Sterilization') },
+        { label: 'Transporting air Production',                  unit: 'l/min',hh: 220, sp: 200, ll: 180, ...actualPair(vals, 'gen_Transporting air Production') },
+        { label: 'Pressure transporting air (dosing piston)',    unit: 'mbar', hh: 2000, hs: 1800, sp: 1000, l: 600, ll: 500, ...actualPair(vals, 'gen_Pressure transporting air (dosing piston)') },
+        { label: 'Pressure transporting air (analogue 2015)',    unit: 'mbar', hh: 4500, hs: 4000, sp: 3000, l: 1500, ll: 1000, ...actualPair(vals, 'gen_Pressure transporting air (analogue 2015)') },
       ])}
     </div>
   </div>`;
@@ -128,12 +139,17 @@ export function sectionPreheating(wd: any): string {
       { label: 'pdyn drying (NW 19)',     key: 'pdyn_dry',  unit: 'mmwc', sp: 26 },
       { label: 'Temp. drying',            key: 'temp_dry',  unit: '°C',   sp: 100 },
     ];
-    const header = `<tr><th style="text-align:left">Parámetro</th><th>Unit</th><th class="sp">SP</th>${tracks.map(t => `<th>Tr ${t}</th>`).join('')}</tr>`;
+    const header = `<tr><th style="text-align:left">Parámetro</th><th>Unit</th><th class="sp">SP</th>${tracks.map(t => `<th>Tr ${t} Sup.</th><th>Tr ${t} Inf.</th>`).join('')}</tr>`;
     const body = params.map(p => {
       const tds = tracks.map(t => {
-        const val = vals[`${p.key}_tr${t}`];
-        const ok = val !== null && val !== undefined && Math.abs(val - p.sp) <= 2;
-        return `<td class="${val !== null && val !== undefined ? (ok ? 'actual-ok' : 'actual-err') : 'actual-empty'}">${n(val)}</td>`;
+        const baseKey = `${p.key}_tr${t}`;
+        const upper = v(vals, `${baseKey}__upper`) ?? v(vals, baseKey);
+        const lower = v(vals, `${baseKey}__lower`);
+        const renderVal = (val: any) => {
+          const ok = val !== null && val !== undefined && Math.abs(val - p.sp) <= 2;
+          return `<td class="${val !== null && val !== undefined ? (ok ? 'actual-ok' : 'actual-err') : 'actual-empty'}">${n(val)}</td>`;
+        };
+        return `${renderVal(upper)}${renderVal(lower)}`;
       }).join('');
       return `<tr><td>${p.label}</td><td style="color:#94a3b8;font-size:7.5pt">${p.unit}</td><td class="sp">${p.sp}±2</td>${tds}</tr>`;
     }).join('');
@@ -148,30 +164,30 @@ export function sectionPreheating(wd: any): string {
     </div>
       ${trackRows}
       ${paramTable('Setpoints de Temperatura por Volumen', '📐', [
-        { label: 'Temp. Preheating 500ml / Drive ON',      unit: '°C', sp: 130, actual: v(vals,'Temp. Preheating 500ml / Drive ON') },
-        { label: 'Temp. Preheating 750ml / Drive ON',      unit: '°C', sp: 170, actual: v(vals,'Temp. Preheating 750ml / Drive ON') },
-        { label: 'Temp. Preheating 960-1000ml / Drive ON', unit: '°C', sp: 230, actual: v(vals,'Temp. Preheating 960-1000ml / Drive ON') },
-        { label: 'Temp. Preheating All / Drive OFF',       unit: '°C', sp: 100, actual: v(vals,'Temp. Preheating All / Drive OFF') },
-        { label: 'Temp. Drying 500ml / Drive ON',          unit: '°C', sp: 120, actual: v(vals,'Temp. Drying 500ml / Drive ON') },
-        { label: 'Temp. Drying 750ml / Drive ON',          unit: '°C', sp: 140, actual: v(vals,'Temp. Drying 750ml / Drive ON') },
-        { label: 'Temp. Drying 960-1000ml / Drive ON',     unit: '°C', sp: 180, actual: v(vals,'Temp. Drying 960-1000ml / Drive ON') },
-        { label: 'Temp. Drying All / Drive OFF',            unit: '°C', sp: 100, actual: v(vals,'Temp. Drying All / Drive OFF') },
+        { label: 'Temp. Preheating 500ml / Drive ON',      unit: '°C', sp: 130, ...actualPair(vals,'Temp. Preheating 500ml / Drive ON') },
+        { label: 'Temp. Preheating 750ml / Drive ON',      unit: '°C', sp: 170, ...actualPair(vals,'Temp. Preheating 750ml / Drive ON') },
+        { label: 'Temp. Preheating 960-1000ml / Drive ON', unit: '°C', sp: 230, ...actualPair(vals,'Temp. Preheating 960-1000ml / Drive ON') },
+        { label: 'Temp. Preheating All / Drive OFF',       unit: '°C', sp: 100, ...actualPair(vals,'Temp. Preheating All / Drive OFF') },
+        { label: 'Temp. Drying 500ml / Drive ON',          unit: '°C', sp: 120, ...actualPair(vals,'Temp. Drying 500ml / Drive ON') },
+        { label: 'Temp. Drying 750ml / Drive ON',          unit: '°C', sp: 140, ...actualPair(vals,'Temp. Drying 750ml / Drive ON') },
+        { label: 'Temp. Drying 960-1000ml / Drive ON',     unit: '°C', sp: 180, ...actualPair(vals,'Temp. Drying 960-1000ml / Drive ON') },
+        { label: 'Temp. Drying All / Drive OFF',            unit: '°C', sp: 100, ...actualPair(vals,'Temp. Drying All / Drive OFF') },
       ])}
       ${paramTable('Steam Sterilization (SST)', '♨️', [
-        { label: 'Steam supply',     unit: '°C', hh: 170, hs: 165, sp: 155, l: 130, ll: 125, actual: v(vals,'Steam supply') },
-        { label: 'Temperatures SST', unit: '°C', hh: 140, hs: 135, sp: 125, l: 121, ll: 115, actual: v(vals,'Temperatures SST') },
+        { label: 'Steam supply',     unit: '°C', hh: 170, hs: 165, sp: 155, l: 130, ll: 125, ...actualPair(vals,'Steam supply') },
+        { label: 'Temperatures SST', unit: '°C', hh: 140, hs: 135, sp: 125, l: 121, ll: 115, ...actualPair(vals,'Temperatures SST') },
       ])}
       ${paramTable('Steam Barriers', '🔒', [
-        { label: 'Steam barrier behind controller (R)', unit: '°C', hh: 140, hs: 135, sp: 125, l: 115, ll: 102, actual: v(vals,'Steam barrier behind controller (R)') },
-        { label: 'Steam barrier behind controller (A)', unit: '°C', hh: 140, hs: 135, sp: 115, l: 110, ll: 102, actual: v(vals,'Steam barrier behind controller (A)') },
-        { label: 'Steam barrier (R) — passive',         unit: '°C', hh: 140, hs: 135, sp: 40,  l: 30,  ll: 25,  actual: v(vals,'Steam barrier (R) — passive') },
-        { label: 'Steam injection tr 1/2',              unit: '°C', hh: 140, hs: 135, sp: 125, l: 110, ll: 102, actual: v(vals,'Steam injection tr 1/2') },
-        { label: 'Steam injection tr 3/4',              unit: '°C', hh: 140, hs: 135, sp: 125, l: 110, ll: 102, actual: v(vals,'Steam injection tr 3/4') },
+        { label: 'Steam barrier behind controller (R)', unit: '°C', hh: 140, hs: 135, sp: 125, l: 115, ll: 102, ...actualPair(vals,'Steam barrier behind controller (R)') },
+        { label: 'Steam barrier behind controller (A)', unit: '°C', hh: 140, hs: 135, sp: 115, l: 110, ll: 102, ...actualPair(vals,'Steam barrier behind controller (A)') },
+        { label: 'Steam barrier (R) — passive',         unit: '°C', hh: 140, hs: 135, sp: 40,  l: 30,  ll: 25,  ...actualPair(vals,'Steam barrier (R) — passive') },
+        { label: 'Steam injection tr 1/2',              unit: '°C', hh: 140, hs: 135, sp: 125, l: 110, ll: 102, ...actualPair(vals,'Steam injection tr 1/2') },
+        { label: 'Steam injection tr 3/4',              unit: '°C', hh: 140, hs: 135, sp: 125, l: 110, ll: 102, ...actualPair(vals,'Steam injection tr 3/4') },
       ])}
       ${paramTable('Condensate Barrier (Dairy)', '💧', [
-        { label: 'Condensate barrier with steam',      unit: '°C', hh: 140, hs: 135, sp: 115, l: 110, ll: 102, actual: v(vals,'Condensate barrier with steam') },
-        { label: 'Condensate barrier flushing',        unit: '°C', hh: 135, hs: 130, sp: 90,  l: 80,  ll: 75,  actual: v(vals,'Condensate barrier flushing') },
-        { label: 'Condensate barrier with condensate', unit: '°C', hh: 75,  hs: 65,  sp: 35,  l: 25,  ll: 20,  actual: v(vals,'Condensate barrier with condensate') },
+        { label: 'Condensate barrier with steam',      unit: '°C', hh: 140, hs: 135, sp: 115, l: 110, ll: 102, ...actualPair(vals,'Condensate barrier with steam') },
+        { label: 'Condensate barrier flushing',        unit: '°C', hh: 135, hs: 130, sp: 90,  l: 80,  ll: 75,  ...actualPair(vals,'Condensate barrier flushing') },
+        { label: 'Condensate barrier with condensate', unit: '°C', hh: 75,  hs: 65,  sp: 35,  l: 25,  ll: 20,  ...actualPair(vals,'Condensate barrier with condensate') },
       ])}
   </div>`;
 }

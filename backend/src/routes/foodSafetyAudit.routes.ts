@@ -24,9 +24,10 @@ router.put('/:id/wizard',  foodSafetyAuditController.saveWizard);
 router.delete('/:id',      foodSafetyAuditController.delete);
 
 // Evidencias fotográficas (anidadas bajo el reporte)
-router.post(  '/:auditId/images',         uploadMiddleware, evidenceImagesController.upload);
-router.get(   '/:auditId/images',         evidenceImagesController.getByAudit);
-router.patch( '/:auditId/images/:imgId',  evidenceImagesController.update);
-router.delete('/:auditId/images/:imgId',  evidenceImagesController.delete);
+router.post(  '/:auditId/images',                uploadMiddleware, evidenceImagesController.upload);
+router.get(   '/:auditId/images',                evidenceImagesController.getByAudit);
+router.patch( '/:auditId/images/:imgId',         evidenceImagesController.update);
+router.put(   '/:auditId/images/:imgId/replace', uploadMiddleware, evidenceImagesController.replace);
+router.delete('/:auditId/images/:imgId',         evidenceImagesController.delete);
 
 export default router;

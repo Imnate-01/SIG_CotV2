@@ -188,6 +188,22 @@ export class FoodSafetyAuditController {
         images: f.audit_evidence_images || []
       }));
 
+      // Cargar imágenes de los pasos 2-5 (param_id = step number)
+      const { data: stepImagesRaw } = await supabaseUser
+        .from('audit_evidence_images')
+        .select('*')
+        .eq('audit_id', id)
+        .not('param_id', 'is', null)
+        .order('param_id')
+        .order('orden');
+
+      const stepImages: Record<number, any[]> = {};
+      for (const img of (stepImagesRaw || [])) {
+        if (!stepImages[img.param_id]) stepImages[img.param_id] = [];
+        stepImages[img.param_id].push(img);
+      }
+      data.step_images = stepImages;
+
       res.json({ success: true, data });
     } catch (error: any) {
       res.status(500).json({ success: false, error: error.message });

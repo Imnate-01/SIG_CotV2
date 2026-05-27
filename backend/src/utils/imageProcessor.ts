@@ -1,4 +1,5 @@
 import sharp from 'sharp';
+import heicConvert = require('heic-convert');
 import { supabaseAdmin } from '../config/supabase';
 
 const SUPABASE_BUCKET = 'food-safety-audit';
@@ -75,20 +76,39 @@ export async function processAuditImage(
   // Garantizar que el bucket existe y es público antes de subir
   await ensureBucket();
 
-  // Obtener metadatos del original
-  const metadata = await sharp(buffer).metadata();
+  // ── Conversión HEIC/HEIF → JPEG ──────────────────────────────────────────
+  // Sharp incluye libheif pero en Windows los binarios precompilados no
+  // incluyen el decoder HEVC/H.265 (licencia del codec). Usamos heic-convert,
+  // que trae su propio decoder WASM de libheif sin depender del OS ni del codec.
+  let workBuffer = buffer;
+  let workMime   = mimeType;
+
+  if (mimeType === 'image/heic' || mimeType === 'image/heif') {
+    try {
+      const jpegArrayBuffer = await heicConvert({
+        buffer:  buffer,    // Buffer de Node.js compatible con la API de heic-convert
+        format:  'JPEG',
+        quality: 0.95,
+      });
+      workBuffer = Buffer.from(jpegArrayBuffer);
+      workMime   = 'image/jpeg';
+      console.log(`[imageProcessor] HEIC convertido a JPEG (${Math.round(workBuffer.length / 1024)} KB)`);
+    } catch (heicErr: any) {
+      throw new Error(`No se pudo convertir el archivo HEIC/HEIF: ${heicErr.message}`);
+    }
+  }
+
+  // Obtener metadatos del buffer procesado
+  const metadata = await sharp(workBuffer).metadata();
   const width_px  = metadata.width  ?? 0;
   const height_px = metadata.height ?? 0;
 
-  // 1. Guardar original
-  // Nota: si el archivo es HEIC/HEIF (iPhone), sharp lo decodifica automáticamente
-  // vía libvips y lo recodifica como JPEG en las versiones report/thumb.
-  // El original se guarda tal cual llega (buffer sin modificar).
-  const originalMime = ['image/heic', 'image/heif'].includes(mimeType) ? 'image/jpeg' : mimeType;
+  // 1. Guardar original (HEIC → almacenamos la versión JPEG convertida)
+  const originalMime = workMime;
   const originalKey = `${storageKeyBase}_original.jpg`;
   const { error: origError } = await supabaseAdmin.storage
     .from(SUPABASE_BUCKET)
-    .upload(originalKey, buffer, {
+    .upload(originalKey, workBuffer, {
       contentType: originalMime,
       upsert: true,
     });
@@ -102,7 +122,7 @@ export async function processAuditImage(
   const urls: Record<string, string> = {};
 
   for (const version of VERSIONS) {
-    const processed = await sharp(buffer)
+    const processed = await sharp(workBuffer)
       .resize(version.width, version.height, {
         fit: 'inside',
         withoutEnlargement: true,
@@ -131,7 +151,7 @@ export async function processAuditImage(
     width_px,
     height_px,
     size_bytes:    originalSizeBytes,
-    mime_type:     mimeType,
+    mime_type:     workMime,  // HEIC convertido a image/jpeg; otros formatos sin cambio
   };
 }
 
